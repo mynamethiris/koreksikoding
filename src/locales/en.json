@@ -1,0 +1,1392 @@
+{
+  "header": {
+    "brand": "KoreksiKoding",
+    "editor": "Correction",
+    "history": "History",
+    "settings": "Settings",
+    "upload": "Upload",
+    "folder": "Folder",
+    "analyze": "Analyze",
+    "analyzing": "Analyzing...",
+    "convert": "Convert",
+    "challenges": "Challenges",
+    "tools": "Others",
+    "toggleLangTitle": "Switch language"
+  },
+  "bottomNav": {
+    "editor": "Correction",
+    "history": "History",
+    "settings": "Settings",
+    "challenges": "Challenges",
+    "tools": "Others"
+  },
+  "analysis": {
+    "tabs": {
+      "result": "Result",
+      "diff": "Comparison",
+      "fix": "Fixes",
+      "explanation": "Explanation",
+      "learn": "Learn",
+      "security": "Security",
+      "duplication": "Duplication"
+    },
+    "stat": {
+      "error": "Error",
+      "warning": "Warning",
+      "suggestion": "Suggestion",
+      "score": "Score",
+      "tokenIn": "Tokens In",
+      "tokenOut": "Tokens Out"
+    },
+    "line": "Line",
+    "errors": "Errors",
+    "warnings": "Warnings",
+    "suggestions": "Suggestions",
+    "fixedCode": "Fixed Code",
+    "noFixedCode": "No fixed code available",
+    "changes": "Changes Made",
+    "copyFixed": "Fixed code",
+    "copied": "Copied",
+    "copy": "Copy",
+    "download": "Download",
+    "fileDownloaded": "File downloaded!",
+    "markdownExport": "Markdown export successful!",
+    "md": "MD",
+    "exportMd": "Export to Markdown",
+    "analyzing": "Analyzing code...",
+    "sendingTo": "Sending to {{provider}}",
+    "noCode": "No code to analyze",
+    "noApiKey": "API key not configured. Open Settings to configure.",
+    "rateLimit": "Analysis limit reached (0/hour). Try again later.",
+    "analysisDone": "Analysis complete!",
+    "analysisFailed": "Analysis failed: {{error}}",
+    "emptyTitle": "Analysis results will appear here",
+    "emptyDesc": "Click \"Analyze\" or press Ctrl+Enter to start",
+    "cleanCode": "Your code is clean!",
+    "cleanDesc": "No errors, warnings, or suggestions found.",
+    "noExplanation": "No detailed explanation available",
+    "noConcepts": "No related concepts",
+    "noVulnerabilities": "No vulnerabilities found",
+    "cleanSecurity": "Your code is safe from common threats.",
+    "noDuplications": "No code duplication found",
+    "cleanDuplication": "Your code has no duplication.",
+    "fileLoaded": "File loaded to editor",
+    "cause": "Cause",
+    "fixLabel": "How to Fix",
+    "wrongExample": "Wrong Example",
+    "correctExample": "Correct Example",
+    "tip": "Tips",
+    "learnMore": "Learn more",
+    "diffTitle": "Code Comparison",
+    "diffOriginal": "Original",
+    "diffFixed": "Fixed",
+    "markdownScore": "Score",
+    "markdownErrors": "Errors",
+    "markdownWarnings": "Warnings",
+    "markdownSuggestions": "Suggestions",
+    "markdownErrorDetail": "Error Detail",
+    "markdownWarningDetail": "Warning Detail",
+    "markdownSuggestionDetail": "Suggestion Detail",
+    "markdownFixedCode": "Fixed Code",
+    "markdownExportTitle": "KoreksiKoding Analysis Results"
+  },
+  "tools": {
+    "title": "Other Tools",
+    "subtitle": "A collection of tools to help you in development",
+    "terminalTitle": "Terminal Problem",
+    "terminalDesc": "Paste terminal error and get instant analysis and solution from AI.",
+    "shareTitle": "Share Code",
+    "shareDesc": "Create a shareable link for your code that lasts for 2 hours.",
+    "promptTitle": "Prompt Builder",
+    "promptDesc": "Create prompts in different styles or fix existing prompts.",
+    "convertTitle": "Convert Code",
+    "convertDesc": "Convert code from one language to another instantly.",
+    "typingTestTitle": "Code Speed Typing",
+    "typingTestDesc": "Typing speed practice for programming symbols, syntax, and code structures.",
+    "guidesTitle": "Learning Guides",
+    "guidesDesc": "Basic guides for learning programming concepts and dev tools."
+  },
+  "convertPage": {
+    "title": "Convert Code",
+    "subtitle": "Transform code from one language to another"
+  },
+  "terminal": {
+    "title": "Terminal",
+    "placeholder": "Paste terminal error here...",
+    "analyzeBtn": "Analyze Error",
+    "analyzing": "Analyzing...",
+    "clear": "Clear",
+    "noError": "No error yet",
+    "hint": "Copy error from terminal, paste here, then click Analyze"
+  },
+  "duplication": {
+    "found": "{{count}} duplications found",
+    "lines": "Lines {{start}}-{{end}}",
+    "duplicatedWith": "Duplicate of lines {{start}}-{{end}}",
+    "severity": "Severity",
+    "suggestion": "Fix suggestion",
+    "category": "Category"
+  },
+  "share": {
+    "title": "Share Code",
+    "shareBtn": "Share",
+    "copyLink": "Copy Link",
+    "copied": "Link copied!",
+    "expiresIn": "Valid for {{time}}",
+    "expired": "Link has expired",
+    "openInEditor": "Open in Editor",
+    "includeName": "",
+    "preview": "Preview",
+    "size": "Size: {{size}}"
+  },
+  "promptMaker": {
+    "title": "Prompt Builder",
+    "desc": "Create prompts in different styles or fix existing prompts",
+    "inputPlaceholder": "Type your base prompt here...",
+    "outputLabel": "Output",
+    "mode": "Mode",
+    "maker": "Create",
+    "fixer": "Fix",
+    "style": "Style",
+    "styleList": "List",
+    "styleAnalytic": "Analytical",
+    "styleDetail": "Detailed",
+    "styleSimple": "Simple",
+    "length": "Length",
+    "lengthShort": "Short",
+    "lengthMedium": "Medium",
+    "lengthLong": "Long",
+    "generate": "Generate",
+    "fix": "Fix",
+    "generating": "Processing...",
+    "useAsCustom": "Use as Custom Prompt",
+    "useAsCustomDone": "Set successfully!",
+    "copyOutput": "Copy"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage AI providers, preferences, and your data",
+    "aiProvider": "AI Provider",
+    "aiProviderDesc": "Configure AI provider for code analysis",
+    "default": "Default",
+    "enterApiKey": "Enter API Key...",
+    "testConnection": "Test Connection",
+    "enterKeyFirst": "Enter an API Key first",
+    "connectionSuccess": "Connection successful! API Key is valid.",
+    "connectionFailed": "Failed to contact server: {{error}}",
+    "providerSet": "Provider set to {{name}}",
+    "providerAdded": "Provider \"{{name}}\" added successfully",
+    "addCustom": "Add Custom Provider",
+    "providerName": "Provider Name",
+    "modelName": "Model Name",
+    "endpoint": "API Endpoint URL",
+    "apiKey": "API Key",
+    "add": "Add",
+    "customPrompt": "Custom Prompt",
+    "customPromptDesc": "Customize the system prompt for code analysis",
+    "customPromptPlaceholder": "Leave empty to use default prompt...",
+    "resetDefault": "Reset to default",
+    "presetDefault": "Default",
+    "presetFocusError": "Focus Errors",
+    "presetDetail": "Full Detail",
+    "aboutUs": "About Us",
+    "aboutUsDesc": "KoreksiKoding development team",
+    "teamLeader": "Team Leader",
+    "member": "Member",
+    "advisorRole": "Advisor",
+    "dangerZone": "Danger Zone",
+    "dangerZoneDesc": "Actions here cannot be undone",
+    "deleteAll": "Delete All Data",
+    "deleteAllDesc": "Delete all analysis history, settings, and other saved data",
+    "deleteAllBtn": "Delete All",
+    "confirmDeleteTitle": "Delete All Data",
+    "confirmDeleteMsg": "All analysis history, provider settings, and saved data will be permanently deleted. The application will reload. Are you sure?",
+    "confirmDeleteBtn": "Yes, Delete All",
+    "dataCleared": "All data successfully deleted"
+  },
+  "beranda": {
+    "badge": "AI-Powered Code Analysis",
+    "heroTitle1": "Fix your code",
+    "heroTitle2": "fast & smart",
+    "heroDesc": "Upload code, get instant analysis: score, errors, warnings, fix suggestions, corrected code, and learning concepts.",
+    "startAnalyze": "Start Analyzing",
+    "viewHistory": "View Guide",
+    "howItWorks": "How It Works",
+    "howItWorksDesc": "Three simple steps to better code",
+    "features": "Key Features",
+    "featuresDesc": "Everything you need to analyze and fix code",
+    "guide": "User Guide",
+    "guideDesc": "Learn how to use KoreksiKoding",
+    "footer": "KoreksiKoding, AI-powered code analysis",
+    "feature1Title": "Smart Analysis",
+    "feature1Desc": "Auto-detects errors, warnings, and fix suggestions, with a code quality score.",
+    "feature2Title": "Instant Fixes",
+    "feature2Desc": "Get corrected code and a list of every change made.",
+    "feature3Title": "Learn",
+    "feature3Desc": "Explanations, concepts, exercises, and a refactoring score to understand mistakes.",
+    "feature4Title": "Privacy & Security",
+    "feature4Desc": "Code is never stored on a server. Includes vulnerability & duplication scan, no tracking.",
+    "step1Label": "Upload",
+    "step1Desc": "Upload a file (20+ languages) or type directly in the editor",
+    "step2Label": "Analyze",
+    "step2Desc": "AI analyzes: errors, warnings, suggestions, and a score",
+    "step3Label": "Get Results",
+    "step3Desc": "View the fix, explanations, and learning concepts",
+    "guideQuickStart": "Quick Start",
+    "guideUpload": "File Upload",
+    "guideKeyboard": "Keyboard Shortcuts",
+    "guideResults": "Reading Analysis Results",
+    "guidePrivacy": "Privacy & Security",
+    "quickStartItems": [
+      "Upload a file or type code directly in the editor",
+      "Click \"Analyze\" or press Ctrl+Enter",
+      "View results: score, errors, warnings, and fix suggestions"
+    ],
+    "uploadItems": [
+      "Drag & drop, individual files, or entire folders",
+      "20+ languages supported: Python, JS, TS, Java, C++, Go, Rust, etc",
+      "Max 5MB per file, code is sanitized before sending"
+    ],
+    "keyboardItems": [
+      "Ctrl+Enter: run analysis",
+      "Ctrl+C: copy code",
+      "Ctrl+Z / Ctrl+Y: undo / redo"
+    ],
+    "resultsItems": [
+      "Results tab: score, errors, warnings, suggestions",
+      "Fixes tab: corrected code + change list",
+      "Learn tab: programming concepts related to errors",
+      "Error details: line location & cause explanation"
+    ],
+    "privacyItems": [
+      "Code is never stored on a server",
+      "API keys stay in your browser (localStorage)",
+      "No tracking or third parties"
+    ],
+    "viewGuides": "View Guides",
+    "guideTips": "Effective Learning Tips",
+    "tipsItems": [
+      "Follow guides in order: Logic → Debugging → IDE...",
+      "Complete quizzes at end of each chapter to unlock next guide",
+      "Mark sections complete to track progress",
+      "Try coding challenges on the Challenges page"
+    ]
+  },
+  "fileUpload": {
+    "selectLang": "Select language for {{name}}:",
+    "cancel": "Cancel"
+  },
+  "editorPage": {
+    "editorTab": "Correction",
+    "analysisTab": "Analysis Results"
+  },
+  "codeEditor": {
+    "emptyTitle": "Type code or upload a file to start analyzing",
+    "emptyDesc": "Drag & drop a file here too",
+    "clearAll": "Clear all",
+    "rename": "Rename"
+  },
+  "riwayat": {
+    "title": "Analysis History",
+    "titleChallenges": "Challenge History",
+    "subtitle": "{{count}} analyses saved",
+    "searchPlaceholder": "Search history by code...",
+    "emptyTitle": "No analysis history yet",
+    "emptyDesc": "Your first code analysis will appear here",
+    "emptySearchTitle": "No search results",
+    "emptySearchDesc": "Try a different keyword",
+    "deleteEntry": "Delete History",
+    "deleteEntryMsg": "Are you sure you want to delete this history? This action cannot be undone.",
+    "deleteEntryConfirm": "Yes, Delete",
+    "deleteAllHistory": "Delete All History",
+    "deleteAllHistoryMsg": "Are you sure you want to delete all analysis history? This action cannot be undone.",
+    "deleteAllHistoryConfirm": "Yes, Delete All",
+    "restoreCode": "Restore Code",
+    "restoreCodeMsg": "Code from this history will be restored to the editor along with its analysis. Current editor code will be replaced. Continue?",
+    "restoreCodeConfirm": "Yes, Restore",
+    "restoreHint": "Restore code to editor",
+    "historyDeleted": "History deleted",
+    "allHistoryDeleted": "All history deleted",
+    "codeRestored": "Code restored to editor!",
+    "exportJsonSuccess": "JSON export successful",
+    "exportCsvSuccess": "CSV export successful",
+    "importSuccess": "{{count}} records imported successfully",
+    "importFailed": "Import failed: {{error}}",
+    "importEmpty": "No data to import",
+    "importNotAnalysis": "This file is not analysis history data. Use a file exported from the Analysis History tab.",
+    "importNotChallenge": "This file is not challenge history data. Use a file exported from the Challenge History tab.",
+    "importInvalidFormat": "Invalid file format",
+    "importUnsupported": "Unsupported file format. Use .json or .csv",
+    "csvEmpty": "CSV is empty or invalid",
+    "importBtn": "Import",
+    "deleteAllBtn": "Delete All",
+    "tabAnalysis": "Analysis",
+    "tabChallenges": "Challenges",
+    "deleteChallengeEntry": "Delete Challenge History",
+    "deleteChallengeEntryMsg": "Are you sure you want to delete this challenge history? This action cannot be undone.",
+    "deleteAllChallenges": "Delete All Challenge History",
+    "deleteAllChallengesMsg": "All challenge history will be permanently deleted. This action cannot be undone.",
+    "deleteAllChallengesConfirm": "Yes, Delete All Challenges",
+    "challengesSubtitle": "{{completed}} completed, {{total}} total"
+  },
+  "challenge": {
+    "title": "Coding Challenges",
+    "subtitle": "Train your coding skills with AI-powered challenges",
+    "easyDesc": "Basic concepts, simple logic",
+    "mediumDesc": "Algorithms, data structures",
+    "hardDesc": "Optimization, complex edge cases",
+    "generating": "Generating challenge...",
+    "newChallenge": "New Challenge",
+    "testCases": "Test Cases",
+    "openInEditor": "Start Challenge",
+    "markDone": "Done",
+    "hints": "Hints",
+    "solution": "Solution",
+    "selectDifficulty": "Select a difficulty to get started",
+    "modeFix": "Fix Code",
+    "check": "Check",
+    "giveUp": "Give Up",
+    "solutionLabel": "Correct answer:",
+    "completedCount": "{{count}} challenges completed",
+    "completed": "Challenge completed!",
+    "input": "Input",
+    "output": "Output",
+    "surrender": "Give Up",
+    "hideSurrender": "Hide",
+    "surrenderCardTitle": "Solution & Explanation",
+    "resetSurrender": "Next Challenge"
+  },
+  "convert": {
+    "targetLang": "Target Language",
+    "source": "Source",
+    "converting": "Converting...",
+    "convertBtn": "Convert to {{lang}}",
+    "loadToEditor": "Load to Editor",
+    "convertAgain": "Convert Again",
+    "clearResult": "Clear conversion result"
+  },
+  "vulnerability": {
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "modal": {
+    "cancel": "Cancel",
+    "confirmDelete": "Yes, Delete"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to Home"
+  },
+  "toast": {
+    "codeCopied": "Code copied!",
+    "codePasted": "Code pasted!",
+    "fileCleared": "File cleared",
+    "noCodeToAnalyze": "No code to analyze",
+    "copied": "Copied!"
+  },
+  "guides": {
+    "title": "Learning Guides",
+    "subtitle": "Basic guides to learn programming concepts and dev tools",
+    "openGuide": "Open Guide",
+    "backToList": "Back to List",
+    "notFound": "Guide not found",
+    "loading": "Loading guide...",
+    "noContent": "Guide content not available yet",
+    "tableOfContent": "Table of Contents",
+    "markComplete": "Mark Complete",
+    "completed": "Completed",
+    "quizRequire": "Complete the quiz to continue",
+    "quizComplete": "Quiz complete!",
+    "logic": {
+      "title": "Programming Logic Basics",
+      "desc": "Learn flow, conditions, and loops using pseudocode not tied to any language.",
+      "items": [
+        "Sequence: statements execute top to bottom in order",
+        "Conditional: make decisions with if/else based on true/false",
+        "Loop: repeat actions with for, while, for-each",
+        "Functions/procedures: group reusable steps you can call by name",
+        "Variables & data types: numbers, text, booleans, store and change values",
+        "Operators: arithmetic (+,-,*,/), comparison (==,>,<), logical (AND, OR, NOT)",
+        "Pseudocode: describe the algorithm in plain language before coding it"
+      ],
+      "detail": {
+        "summary": "Programming logic is the foundation of algorithmic thinking. It is language-agnostic, build this first, then pick a language.",
+        "sections": [
+          {
+            "title": "What Is an Algorithm?",
+            "content": "A logical, ordered set of steps to solve a problem. Each step must be clear and testable.",
+            "bullets": [
+              "Break down the problem",
+              "Order the steps",
+              "End every step"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/6/67/Flowgorithm_Input_Process_Output.svg",
+            "imageCaption": "Algorithm flow: Input-Process-Output | Wikimedia Commons"
+          },
+          {
+            "title": "Sequential Flow",
+            "content": "The computer executes statements top to bottom in order. Sequential flow is that ordered execution.",
+            "bullets": [
+              "Read input",
+              "Process",
+              "Write output"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/6/67/Flowgorithm_Input_Process_Output.svg",
+            "imageCaption": "Algorithm flow: Input-Process-Output | Wikimedia Commons"
+          },
+          {
+            "title": "Branching (Conditions)",
+            "content": "Use if/else to decide. If the condition is true run branch A, else branch B.",
+            "bullets": [
+              "if",
+              "else if",
+              "else"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/c/c5/If-Then-Else-diagram.svg",
+            "imageCaption": "If-then-else structure | Wikimedia Commons"
+          },
+          {
+            "title": "Looping",
+            "content": "Repeat the same action until a condition is met. for for a fixed count, while for a condition.",
+            "bullets": [
+              "for",
+              "while",
+              "for-each"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/3/31/Flowchart_-_While-loop.ru.svg",
+            "imageCaption": "While-loop structure | Wikimedia Commons"
+          },
+          {
+            "title": "Pseudocode",
+            "content": "Write steps in plain language first. It keeps focus off syntax and helps design the solution.",
+            "bullets": [
+              "Use clear verbs",
+              "One action per line",
+              "Bullets & indentation"
+            ],
+            "visual": "logic-pseudo"
+          }
+        ],
+        "quiz": {
+          "title": "Quiz: Programming Logic Basics",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "What is an algorithm?",
+              "options": [
+                "A collection of variables",
+                "An ordered set of logical steps to solve a problem",
+                "A data type",
+                "A library"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "Which structure is used to make decisions in programming?",
+              "options": [
+                "Loop",
+                "Function",
+                "Conditional (if/else)",
+                "Variable"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q3",
+              "question": "Which of the following is NOT a data type?",
+              "options": [
+                "Number",
+                "Text (string)",
+                "Boolean",
+                "Operator"
+              ],
+              "answer": 3
+            },
+            {
+              "id": "q4",
+              "question": "Which loop is suitable for repeating based on a condition?",
+              "options": [
+                "for",
+                "while",
+                "for-each",
+                "do-while"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "Pseudocode is used for?",
+              "options": [
+                "Saving files",
+                "Describing algorithms in plain language before coding",
+                "Compiling code",
+                "Connecting to a database"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "debugging": {
+      "title": "Basic Debugging",
+      "desc": "Find and fix bugs in your code through a systematic process.",
+      "items": [
+        "Know error types: syntax, runtime, logic",
+        "Insert console.log/print to monitor variable values",
+        "Isolate: comment out suspected code, then narrow down",
+        "Edge cases: test extremes (empty, zero, negative, large)",
+        "Reproduce: confirm the error happens consistently"
+      ],
+      "detail": {
+        "summary": "Debugging is not guessing at errors, it is a systematic process of isolation and verification from the message down to reproduction.",
+        "sections": [
+          {
+            "title": "Print Statements",
+            "content": "Insert log output to watch variable values during runtime. Remove or replace with a debugger afterward.",
+            "bullets": [
+              "console.log / print",
+              "label your output",
+              "remove before release"
+            ],
+            "visual": "debugging-print"
+          },
+          {
+            "title": "Isolating the Problem",
+            "content": "Comment out suspected code blocks. If the error vanishes, that block is guilty. Reduce inputs to a minimum.",
+            "bullets": [
+              "comment in stages",
+              "make a minimal test input",
+              "check recent changes"
+            ],
+            "visual": "debugging-isolate"
+          },
+          {
+            "title": "Testing Edge Cases",
+            "content": "Bugs often hide at extremes: empty input, zero, negative, or very large data.",
+            "bullets": [
+              "test lower bound",
+              "test upper bound",
+              "test unusual cases"
+            ],
+            "visual": "debugging-edge"
+          }
+        ],
+        "quiz": {
+          "title": "Quiz: Basic Debugging",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Stack traces are typically read from?",
+              "options": [
+                "Bottom to top",
+                "Top to bottom",
+                "Randomly",
+                "Diagonally"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "Which is the correct problem isolation technique?",
+              "options": [
+                "Restart the computer",
+                "Comment out suspected code, then minimize input",
+                "Add console.log to every line",
+                "Delete all code"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q3",
+              "question": "What does \"edge case\" mean in debugging?",
+              "options": [
+                "Normal values",
+                "Extreme values like empty, zero, negative",
+                "Random values",
+                "Null values"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q4",
+              "question": "Rubber duck debugging is?",
+              "options": [
+                "IDE breakpoints",
+                "Explaining your code out loud to spot logic flaws",
+                "Performance profiling",
+                "Unit testing"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "To \"reproduce the error\" means?",
+              "options": [
+                "Ignore the error",
+                "Confirm the error happens consistently",
+                "Replace the computer",
+                "Update the library"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "ide": {
+      "title": "Introduction to Code Editor & IDE",
+      "desc": "Navigate the editor, install key extensions, and run code directly from VS Code.",
+      "items": [
+        "Explorer: view and manage project files",
+        "Integrated Terminal: run commands without leaving the editor",
+        "Search: find text across the whole project",
+        "Extension Marketplace: install Error Lens, Live Server, Prettier",
+        "Live Server / Live Preview for HTML",
+        "npm run scripts for projects"
+      ],
+      "detail": {
+        "summary": "A code editor is where you write code. An IDE combines the editor, terminal, and other tools. Learn the interface so you are never lost.",
+        "sections": [
+          {
+            "title": "VS Code Interface",
+            "content": "VS Code organizes key features in side panels and the bottom bar. Get to know these areas so navigation feels natural from the start.",
+            "bullets": [
+              "Explorer: view and manage project files",
+              "Integrated Terminal: run commands without leaving the editor",
+              "Search: find text across the whole project",
+              "Extension Marketplace: install additional features"
+            ],
+            "visual": "ide-nav"
+          },
+          {
+            "title": "Essential Extensions",
+            "content": "Extensions add capabilities to VS Code. Install ones that boost productivity and catch errors early.",
+            "bullets": [
+              "Error Lens: show errors inline in code",
+              "Live Server: auto-open a web preview",
+              "Prettier: format code consistently",
+              "Live Share: collaborate on code"
+            ]
+          },
+          {
+            "title": "Running Code",
+            "content": "Run scripts directly from the editor. Save first, then watch the output panel for errors.",
+            "bullets": [
+              "Live Server / Live Preview for HTML/CSS",
+              "Integrated terminal for direct execution",
+              "npm run scripts for existing projects",
+              "Watch the output panel for error messages"
+            ]
+          }
+        ],
+        "quiz": {
+          "title": "Quiz: Introduction to Code Editor & IDE",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "VS Code is an example of a?",
+              "options": [
+                "Database",
+                "Code editor / IDE",
+                "Web browser",
+                "Terminal"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "Which extension shows errors directly in the code?",
+              "options": [
+                "Live Share",
+                "Prettier",
+                "Error Lens",
+                "Live Server"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q3",
+              "question": "Live Server is used to?",
+              "options": [
+                "Edit code",
+                "Format code",
+                "Auto-open a web preview",
+                "Manage extensions"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q4",
+              "question": "Prettier is used to?",
+              "options": [
+                "Merge code",
+                "Format code consistently",
+                "Compile code",
+                "Delete errors"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "The integrated terminal in VS Code lets you?",
+              "options": [
+                "Write code",
+                "Run commands without leaving the editor",
+                "Open a browser",
+                "Manage files"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "git": {
+      "title": "Basic Git",
+      "desc": "Version control concepts: commit, branch, merge, and teamwork.",
+      "items": [
+        "git init: create a new local repository",
+        "git add <file> / git add .: stage files to commit",
+        "git commit -m \"message\": save a snapshot of your changes",
+        "git status: see modified/untracked files",
+        "git log: view commit history",
+        "git branch: create a parallel branch",
+        "git checkout <branch>: switch to another branch",
+        "git merge <branch>: combine changes from another branch",
+        "git push/pull: sync with the remote repository"
+      ],
+      "detail": {
+        "summary": "Git tracks the history of your code. Use branches to isolate features, then merge them safely.",
+        "sections": [
+          {
+            "title": "What Is Git?",
+            "content": "A distributed version control system. Every clone carries the full history.",
+            "bullets": [
+              "local",
+              "per-commit snapshots",
+              "reversible"
+            ],
+            "visual": "git-intro"
+          },
+          {
+            "title": "Staging & Commit",
+            "content": "git add marks files, git commit makes a snapshot. A good commit message documents why.",
+            "bullets": [
+              "git add",
+              "git commit -m",
+              "snapshot"
+            ],
+            "visual": "git-commit"
+          },
+          {
+            "title": "Branching",
+            "content": "A branch is a parallel history line. Do feature work on a branch, keep main stable.",
+            "bullets": [
+              "git branch",
+              "git checkout",
+              "safe parallel"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Git_operations.svg",
+            "imageCaption": "Git operations (branch) | Wikimedia Commons"
+          },
+          {
+            "title": "Merging",
+            "content": "Bring one branch into another. Fast-forward if linear; resolve conflicts if overlapping.",
+            "bullets": [
+              "git merge",
+              "conflict",
+              "fast-forward"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Git_operations.svg",
+            "imageCaption": "Git operations (merge) | Wikimedia Commons"
+          },
+          {
+            "title": "Remote",
+            "content": "push uploads, pull fetches. A Pull Request is a merge request reviewed via UI.",
+            "bullets": [
+              "git push",
+              "git pull",
+              "Pull Request"
+            ],
+            "visual": "git-remote"
+          }
+        ],
+        "quiz": {
+          "title": "Quiz: Basic Git",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "git init is used to?",
+              "options": [
+                "Push",
+                "Create a new local repository",
+                "Clone",
+                "Merge"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "git add is used to?",
+              "options": [
+                "Commit",
+                "Stage files for commit",
+                "Create branch",
+                "Pull"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q3",
+              "question": "Branches are used for?",
+              "options": [
+                "Delete files",
+                "Parallel history for features",
+                "Compress",
+                "Rename"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q4",
+              "question": "git push?",
+              "options": [
+                "Download",
+                "Upload",
+                "Merge",
+                "Diff"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "Merge conflicts occur when?",
+              "options": [
+                "Always fast-forward",
+                "Changes overlap",
+                "First commit",
+                "New branch"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "prompt": {
+      "title": "AI-Assisted Learning",
+      "desc": "Use AI to learn and understand code, from explanations to refactoring.",
+      "items": [
+        "Use AI to explain concepts and give examples",
+        "Set a clear role so AI responds to your goal",
+        "Ask AI to explain and refactor code",
+        "AI can be wrong, always verify and test manually",
+        "Prompts: role, context, output format, examples"
+      ],
+      "detail": {
+        "summary": "AI can be a good learning assistant. Use it to explain concepts, provide examples, and clean up code. Remember AI is a tool, not a replacement for your thinking.",
+        "sections": [
+          {
+            "title": "Using AI to Learn",
+            "content": "AI can explain concepts, give code examples, and answer questions. Give clear instructions for relevant responses.",
+            "bullets": [
+              "Ask for explanations with concrete examples",
+              "Let AI break complex concepts into small steps",
+              "Use AI to translate foreign terms"
+            ]
+          },
+          {
+            "title": "Setting the Right Role",
+            "content": "Assign the AI a role so its tone and depth match your learning goal.",
+            "bullets": [
+              "You are a teacher, reviewer, expert",
+              "Match the tone to your goal",
+              "State context and difficulty level"
+            ]
+          },
+          {
+            "title": "Refactoring and Code Explanation",
+            "content": "Ask AI to explain tricky lines and suggest a cleaner structure.",
+            "bullets": [
+              "Ask for line-by-line explanations",
+              "AI can suggest a cleaner code structure",
+              "Use AI to add comments to existing code"
+            ]
+          },
+          {
+            "title": "Limitations and Verification",
+            "content": "AI is not perfect it can give wrong answers. Always test code manually.",
+            "bullets": [
+              "AI can give incorrect answers",
+              "Always run code to verify",
+              "Re-explain results to yourself"
+            ]
+          }
+        ],
+        "quiz": {
+          "title": "Quiz: AI-Assisted Learning",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "AI is used to learn programming so that?",
+              "options": [
+                "Replace programming books",
+                "Explain concepts and provide examples",
+                "Write code automatically",
+                "Replace the computer"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "Assigning a role to AI aims to?",
+              "options": [
+                "Set the AI tone and response depth",
+                "Cause an error",
+                "Define file format",
+                "Configure network"
+              ],
+              "answer": 0
+            },
+            {
+              "id": "q3",
+              "question": "Refactoring means?",
+              "options": [
+                "Delete all code",
+                "Copy code to another document",
+                "Restructure and clean up existing code",
+                "Replace the programming language"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q4",
+              "question": "AI can help explain code by?",
+              "options": [
+                "Hiding errors",
+                "Giving random names",
+                "Explaining tricky lines and suggesting a cleaner structure",
+                "Compiling the code"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q5",
+              "question": "What is the risk of using AI to learn?",
+              "options": [
+                "Code becomes slow",
+                "AI may give incorrect answers",
+                "Internet drops",
+                "Files will be lost"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "linux": {
+      "title": "Basic Linux CLI",
+      "desc": "Navigate the filesystem and run basic operations via the terminal.",
+      "items": [
+        "pwd: print current directory",
+        "ls: list contents, check package.json & requirements.txt",
+        "cd <dir>: change directory",
+        "mkdir <dir>: create a directory",
+        "touch/cp/mv/rm: create, copy, move, delete files",
+        "cat/less/more: read file contents",
+        "grep: search text inside files",
+        "pipe | : send one command output to another",
+        "chmod: set file permissions"
+      ],
+      "detail": {
+        "summary": "The terminal is a direct line to your system. Mastering core commands multiplies your productivity.",
+        "sections": [
+          {
+            "title": "Directory Navigation",
+            "content": "Know where you are and hop around quickly.",
+            "bullets": [
+              "pwd",
+              "ls",
+              "cd"
+            ],
+            "visual": "linux-nav"
+          },
+          {
+            "title": "File & Directory Ops",
+            "content": "Create, copy, move, and remove files and directories.",
+            "bullets": [
+              "touch",
+              "cp",
+              "mv",
+              "rm",
+              "mkdir"
+            ],
+            "visual": "linux-files"
+          },
+          {
+            "title": "Reading Files",
+            "content": "cat prints contents; less/more let you scroll long files.",
+            "bullets": [
+              "cat",
+              "less",
+              "more",
+              "head",
+              "tail"
+            ],
+            "visual": "linux-read"
+          },
+          {
+            "title": "Pipe & Redirect",
+            "content": "Pipe | streams one command into another. Redirect > writes to a file.",
+            "bullets": [
+              "|",
+              ">",
+              ">>",
+              "2>&1"
+            ],
+            "visual": "linux-pipe"
+          },
+          {
+            "title": "Permissions",
+            "content": "chmod sets who can read/write/exec. rwx = read/write/execute.",
+            "bullets": [
+              "rwx",
+              "chmod",
+              "755"
+            ],
+            "visual": "linux-perm"
+          }
+        ],
+        "quiz": {
+          "title": "Quiz: Basic Linux CLI",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "pwd is used to?",
+              "options": [
+                "List",
+                "Print working directory",
+                "Change directory",
+                "Make directory"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "ls is used to?",
+              "options": [
+                "List directory contents",
+                "Change directory",
+                "Create file",
+                "Delete file"
+              ],
+              "answer": 0
+            },
+            {
+              "id": "q3",
+              "question": "The pipe | means?",
+              "options": [
+                "Stream output to another command",
+                "Redirect to file",
+                "Delete output",
+                "Exit"
+              ],
+              "answer": 0
+            },
+            {
+              "id": "q4",
+              "question": "chmod is used for?",
+              "options": [
+                "File permissions",
+                "Move file",
+                "Copy",
+                "Rename"
+              ],
+              "answer": 0
+            },
+            {
+              "id": "q5",
+              "question": "The > redirect?",
+              "options": [
+                "Append",
+                "Write to file",
+                "To variable",
+                "Exit"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "build": {
+      "title": "Build & Dependency Management Basics",
+      "desc": "How projects are built and how their dependencies are managed.",
+      "items": [
+        "Build: turn source code into a runnable artifact",
+        "Package manager: npm, pip, cargo, install dependencies",
+        "Manifest files: package.json, requirements.txt, Cargo.toml",
+        "Dependency resolution: compatible versions, lock files",
+        "Semantic versioning: MAJOR.MINOR.PATCH"
+      ],
+      "detail": {
+        "summary": "A build compiles source and dependencies into a runnable artifact. Dependency management keeps every library at a consistent version.",
+        "sections": [
+          {
+            "title": "What Is a Build?",
+            "content": "The process that turns your code and dependencies into a runnable artifact.",
+            "bullets": [
+              "compile",
+              "bundle",
+              "transpile"
+            ],
+            "visual": "build-def"
+          },
+          {
+            "title": "Package Managers",
+            "content": "They fetch and manage third-party libraries for you.",
+            "bullets": [
+              "npm",
+              "pip",
+              "cargo"
+            ],
+            "visual": "build-pkg"
+          },
+          {
+            "title": "Manifest vs Lockfile",
+            "content": "The manifest declares what you need; the lockfile pins the exact versions.",
+            "bullets": [
+              "package.json",
+              "package-lock.json"
+            ],
+            "visual": "build-manifest"
+          },
+          {
+            "title": "Dependency Resolution",
+            "content": "Pick compatible versions and avoid version conflicts.",
+            "bullets": [
+              "caret",
+              "tilde",
+              "resolution"
+            ],
+            "visual": "build-deps"
+          },
+          {
+            "title": "Semantic Versioning",
+            "content": "MAJOR.MINOR.PATCH. Patches fix, minor adds, major breaks.",
+            "bullets": [
+              "1.2.3",
+              "^",
+              "~"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Semver.svg",
+            "imageCaption": "Semantic Versioning | Wikimedia Commons"
+          }
+        ],
+        "quiz": {
+          "title": "Quiz: Build & Dependency Management Basics",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "A build is the process of?",
+              "options": [
+                "Deleting files",
+                "Compiling source into a runnable artifact",
+                "Renaming",
+                "Compressing only"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "npm is a package manager for?",
+              "options": [
+                "Python",
+                "JavaScript",
+                "Rust",
+                "Go"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q3",
+              "question": "package.json contains?",
+              "options": [
+                "Lockfile",
+                "Dependency manifest",
+                "Source code",
+                "OS config"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q4",
+              "question": "package-lock.json contains?",
+              "options": [
+                "Source code",
+                "Pinned dependency versions",
+                "README",
+                "License"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "What does SemVer mean?",
+              "options": [
+                "Date format",
+                "MAJOR.MINOR.PATCH",
+                "Random",
+                "Author name"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "security": {
+      "title": "Basic Security",
+      "desc": "Simple practices that prevent common code vulnerabilities.",
+      "items": [
+        "Never hardcode credentials: use .env for API keys, passwords, tokens",
+        "Validate input: check type, length, and format before use",
+        "SQL injection: use parameterized queries, not string concatenation",
+        "XSS: escape HTML output, never render raw user input",
+        "HTTPS: encrypt traffic, never send secrets over plain HTTP"
+      ],
+      "detail": {
+        "summary": "Bake in security from the start. Validate all input and never store secrets in code.",
+        "sections": [
+          {
+            "title": "Input Validation",
+            "content": "Treat every input as hostile. Validate type, length, and format.",
+            "bullets": [
+              "whitelist",
+              "type check",
+              "reject"
+            ],
+            "visual": "security-input"
+          },
+          {
+            "title": "SQL Injection",
+            "content": "Raw string concatenation opens injection attacks. Use parameterized queries.",
+            "bullets": [
+              "parameterized",
+              "prepared statements",
+              "never concat"
+            ],
+            "visual": "security-sql"
+          },
+          {
+            "title": "XSS",
+            "content": "Rendering raw user input runs injected scripts. Escape all HTML output.",
+            "bullets": [
+              "escape",
+              "templating",
+              "CSP"
+            ],
+            "visual": "security-xss"
+          },
+          {
+            "title": "Secrets Management",
+            "content": "API keys, passwords, tokens must never be hardcoded. Use env vars or a vault.",
+            "bullets": [
+              "env vars",
+              ".env",
+              "vault"
+            ],
+            "visual": "security-secret"
+          },
+          {
+            "title": "Transport Security",
+            "content": "Send sensitive data over HTTPS/TLS, never plain HTTP.",
+            "bullets": [
+              "TLS",
+              "HTTPS",
+              "valid cert"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/4/4f/TLS_1.3_Handshake.png",
+            "imageCaption": "TLS 1.3 Handshake | Wikimedia Commons (CC BY-SA 4.0)"
+          }
+        ],
+        "quiz": {
+          "title": "Quiz: Basic Security",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Why is hardcoding credentials dangerous?",
+              "options": [
+                "It is slow",
+                "Vulnerable to leaks",
+                "Inconvenient",
+                "Not portable"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "SQL injection is prevented by using?",
+              "options": [
+                "String concatenation",
+                "Parameterized queries",
+                "Comments",
+                "Indexes"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q3",
+              "question": "XSS is prevented by?",
+              "options": [
+                "Rendering raw input",
+                "Escaping HTML",
+                "SQL",
+                "JSON"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q4",
+              "question": "API keys should be stored in?",
+              "options": [
+                "Hardcoded in code",
+                "Environment variables / vault",
+                "Comments",
+                "File names"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "HTTP is dangerous because it?",
+              "options": [
+                "Is slow",
+                "Transmits plain text (unencrypted)",
+                "Redirects",
+                "Uses cookies"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "quizCheck": "Check Answers",
+    "quizReset": "Retry Quiz",
+    "quizScore": "Score",
+    "quizPassed": "Well done! All correct.",
+    "quizNotAllCorrect": "Not all correct yet. Check the hints, adjust your answers, then try again.",
+    "quizCorrect": "Correct",
+    "quizIncorrect": "Wrong",
+    "quizYouPicked": "You picked",
+    "needsRetry": "Needs Retry",
+    "locked": "Locked",
+    "unlockHint": "Complete previous guide to unlock"
+  }
+}

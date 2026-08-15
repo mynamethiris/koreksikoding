@@ -1,0 +1,1373 @@
+{
+  "header": {
+    "brand": "KoreksiKoding",
+    "editor": "Koreksi",
+    "history": "Riwayat",
+    "settings": "Pengaturan",
+    "upload": "Unggah",
+    "folder": "Folder",
+    "analyze": "Analisis",
+    "analyzing": "Menganalisis...",
+    "convert": "Konversi",
+    "challenges": "Tantangan",
+    "tools": "Lainnya",
+    "toggleLangTitle": "Ganti bahasa"
+  },
+  "bottomNav": {
+    "editor": "Koreksi",
+    "history": "Riwayat",
+    "settings": "Pengaturan",
+    "challenges": "Tantangan",
+    "tools": "Lainnya"
+  },
+  "analysis": {
+    "tabs": {
+      "result": "Hasil",
+      "diff": "Perbandingan",
+      "fix": "Perbaikan",
+      "explanation": "Penjelasan",
+      "learn": "Belajar",
+      "security": "Keamanan",
+      "duplication": "Duplikasi"
+    },
+    "stat": {
+      "error": "Error",
+      "warning": "Peringatan",
+      "suggestion": "Saran",
+      "score": "Skor",
+      "tokenIn": "Token Masuk",
+      "tokenOut": "Token Keluar"
+    },
+    "line": "Baris",
+    "errors": "Error",
+    "warnings": "Peringatan",
+    "suggestions": "Saran",
+    "fixedCode": "Kode Perbaikan",
+    "noFixedCode": "Tidak ada kode perbaikan yang tersedia",
+    "changes": "Perubahan yang Dilakukan",
+    "copyFixed": "Kode perbaikan",
+    "copied": "Disalin",
+    "copy": "Salin",
+    "download": "Unduh",
+    "fileDownloaded": "File berhasil diunduh!",
+    "markdownExport": "Ekspor Markdown berhasil!",
+    "md": "MD",
+    "exportMd": "Ekspor ke Markdown",
+    "analyzing": "Menganalisis kode...",
+    "sendingTo": "Mengirim ke {{provider}}",
+    "noCode": "Tidak ada kode untuk dianalisis",
+    "noApiKey": "API key belum dikonfigurasi. Buka Pengaturan untuk mengatur.",
+    "rateLimit": "Batas analisis tercapai (0/jam). Coba lagi nanti.",
+    "analysisDone": "Analisis selesai!",
+    "analysisFailed": "Analisis gagal: {{error}}",
+    "emptyTitle": "Hasil analisis akan muncul di sini",
+    "emptyDesc": "Klik \"Analisis\" atau tekan Ctrl+Enter untuk memulai",
+    "cleanCode": "Kode Anda bersih!",
+    "cleanDesc": "Tidak ada error, peringatan, atau saran yang ditemukan.",
+    "noExplanation": "Tidak ada penjelasan detail yang tersedia",
+    "noConcepts": "Tidak ada konsep terkait",
+    "noVulnerabilities": "Tidak ada kerentanan yang ditemukan",
+    "cleanSecurity": "Kode Anda aman dari ancaman umum.",
+    "noDuplications": "Tidak ada duplikasi kode yang ditemukan",
+    "cleanDuplication": "Kode Anda tidak memiliki duplikasi.",
+    "fileLoaded": "File dimuat ke editor",
+    "cause": "Penyebab",
+    "fixLabel": "Cara Memperbaiki",
+    "wrongExample": "Contoh Salah",
+    "correctExample": "Contoh Benar",
+    "tip": "Tips",
+    "learnMore": "Pelajari lebih lanjut",
+    "diffTitle": "Perbandingan Kode",
+    "diffOriginal": "Asli",
+    "diffFixed": "Diperbaiki",
+    "markdownScore": "Skor",
+    "markdownErrors": "Error",
+    "markdownWarnings": "Peringatan",
+    "markdownSuggestions": "Saran",
+    "markdownErrorDetail": "Detail Error",
+    "markdownWarningDetail": "Detail Peringatan",
+    "markdownSuggestionDetail": "Detail Saran",
+    "markdownFixedCode": "Kode Perbaikan",
+    "markdownExportTitle": "Hasil Analisis KoreksiKoding"
+  },
+  "tools": {
+    "title": "Alat Lainnya",
+    "subtitle": "Kumpulan alat untuk membantu Anda dalam pengembangan",
+    "terminalTitle": "Masalah Terminal",
+    "terminalDesc": "Tempel error terminal dan dapatkan analisis serta solusi instan dari AI.",
+    "shareTitle": "Bagikan Kode",
+    "shareDesc": "Buat tautan yang dapat dibagikan untuk kode Anda yang berlaku selama 2 jam.",
+    "promptTitle": "Prompt Builder",
+    "promptDesc": "Buat prompt dengan berbagai gaya atau perbaiki prompt yang sudah ada.",
+    "convertTitle": "Konversi Kode",
+    "convertDesc": "Konversi kode dari satu bahasa ke bahasa lain secara instan.",
+    "typingTestTitle": "Ketik Cepat Kode",
+    "typingTestDesc": "Latihan kecepatan mengetik untuk simbol pemrograman, sintaks, dan struktur kode.",
+    "guidesTitle": "Panduan Belajar",
+    "guidesDesc": "Panduan dasar untuk memahami konsep pemrograman dan alat pengembangan."
+  },
+  "convertPage": {
+    "title": "Konversi Kode",
+    "subtitle": "Ubah kode dari satu bahasa ke bahasa lain"
+  },
+  "terminal": {
+    "title": "Terminal",
+    "placeholder": "Tempel error terminal di sini...",
+    "analyzeBtn": "Analisis Error",
+    "analyzing": "Menganalisis...",
+    "clear": "Bersihkan",
+    "noError": "Belum ada error",
+    "hint": "Salin error dari terminal, tempel di sini, lalu klik Analisis"
+  },
+  "duplication": {
+    "found": "{{count}} duplikasi ditemukan",
+    "lines": "Baris {{start}}-{{end}}",
+    "duplicatedWith": "Duplikat dari baris {{start}}-{{end}}",
+    "severity": "Tingkat Keparahan",
+    "suggestion": "Saran perbaikan",
+    "category": "Kategori"
+  },
+  "share": {
+    "title": "Bagikan Kode",
+    "shareBtn": "Bagikan",
+    "copyLink": "Salin Tautan",
+    "copied": "Tautan disalin!",
+    "expiresIn": "Berlaku selama {{time}}",
+    "expired": "Tautan telah kedaluwarsa",
+    "openInEditor": "Buka di Editor",
+    "includeName": "",
+    "preview": "Pratinjau",
+    "size": "Ukuran: {{size}}"
+  },
+  "promptMaker": {
+    "title": "Prompt Builder",
+    "desc": "Buat prompt dengan berbagai gaya atau perbaiki prompt yang sudah ada",
+    "inputPlaceholder": "Ketik prompt dasar Anda di sini...",
+    "outputLabel": "Output",
+    "mode": "Mode",
+    "maker": "Buat",
+    "fixer": "Perbaiki",
+    "style": "Gaya",
+    "styleList": "Daftar",
+    "styleAnalytic": "Analitis",
+    "styleDetail": "Detail",
+    "styleSimple": "Sederhana",
+    "length": "Panjang",
+    "lengthShort": "Pendek",
+    "lengthMedium": "Sedang",
+    "lengthLong": "Panjang",
+    "generate": "Hasilkan",
+    "fix": "Perbaiki",
+    "generating": "Memproses...",
+    "useAsCustom": "Gunakan sebagai Prompt Kustom",
+    "useAsCustomDone": "Berhasil diatur!",
+    "copyOutput": "Salin"
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "subtitle": "Kelola penyedia AI, preferensi, dan data Anda",
+    "aiProvider": "Penyedia AI",
+    "aiProviderDesc": "Konfigurasi penyedia AI untuk analisis kode",
+    "default": "Default",
+    "enterApiKey": "Masukkan API Key...",
+    "testConnection": "Uji Koneksi",
+    "enterKeyFirst": "Masukkan API Key terlebih dahulu",
+    "connectionSuccess": "Koneksi berhasil! API Key valid.",
+    "connectionFailed": "Gagal menghubungi server: {{error}}",
+    "providerSet": "Penyedia diatur ke {{name}}",
+    "providerAdded": "Penyedia \"{{name}}\" berhasil ditambahkan",
+    "addCustom": "Tambah Penyedia Kustom",
+    "providerName": "Nama Penyedia",
+    "modelName": "Nama Model",
+    "endpoint": "URL API Endpoint",
+    "apiKey": "API Key",
+    "add": "Tambah",
+    "customPrompt": "Prompt Kustom",
+    "customPromptDesc": "Sesuaikan prompt sistem untuk analisis kode",
+    "customPromptPlaceholder": "Kosongkan untuk menggunakan prompt default...",
+    "resetDefault": "Reset ke default",
+    "presetDefault": "Default",
+    "presetFocusError": "Fokus Error",
+    "presetDetail": "Detail Penuh",
+    "aboutUs": "Tentang Kami",
+    "aboutUsDesc": "Tim pengembang KoreksiKoding",
+    "teamLeader": "Pemimpin Tim",
+    "member": "Anggota",
+    "advisorRole": "Penasihat",
+    "dangerZone": "Zona Bahaya",
+    "dangerZoneDesc": "Tindakan di sini tidak dapat dibatalkan",
+    "deleteAll": "Hapus Semua Data",
+    "deleteAllDesc": "Hapus semua riwayat analisis, pengaturan, dan data tersimpan lainnya",
+    "deleteAllBtn": "Hapus Semua",
+    "confirmDeleteTitle": "Hapus Semua Data",
+    "confirmDeleteMsg": "Semua riwayat analisis, pengaturan penyedia, dan data tersimpan akan dihapus secara permanen. Aplikasi akan dimuat ulang. Anda yakin?",
+    "confirmDeleteBtn": "Ya, Hapus Semua",
+    "dataCleared": "Semua data berhasil dihapus"
+  },
+  "beranda": {
+    "badge": "Analisis Kode Berbasis AI",
+    "heroTitle1": "Perbaiki kode Anda",
+    "heroTitle2": "cepat & cerdas",
+    "heroDesc": "Unggah kode, dapatkan analisis instan: skor, error, peringatan, saran, kode koreksi, dan konsep belajar.",
+    "startAnalyze": "Mulai Menganalisis",
+    "viewHistory": "Lihat Panduan",
+    "howItWorks": "Cara Kerja",
+    "howItWorksDesc": "Tiga langkah sederhana untuk kode yang lebih baik",
+    "features": "Fitur Utama",
+    "featuresDesc": "Segala hal yang Anda butuhkan untuk menganalisis dan memperbaiki kode",
+    "guide": "Panduan Pengguna",
+    "guideDesc": "Pelajari cara menggunakan KoreksiKoding",
+    "footer": "KoreksiKoding, analisis kode berbasis AI",
+    "feature1Title": "Analisis Cerdas",
+    "feature1Desc": "Deteksi error, peringatan, dan saran perbaikan otomatis, lengkap dengan skor kualitas kode.",
+    "feature2Title": "Perbaikan Instan",
+    "feature2Desc": "Dapatkan kode koreksi dan daftar setiap perubahan yang dibuat.",
+    "feature3Title": "Belajar",
+    "feature3Desc": "Penjelasan, konsep, soal latihan, dan skor refaktor untuk memahami kesalahan.",
+    "feature4Title": "Privasi & Keamanan",
+    "feature4Desc": "Kode tak pernah disimpan di server. Termasuk pemindai kerentanan & duplikat, tanpa tracking.",
+    "step1Label": "Unggah",
+    "step1Desc": "Unggah file kode (20+ bahasa) ke editor",
+    "step2Label": "Analisis AI",
+    "step2Desc": "AI menganalisis: error, peringatan, saran, dan skor",
+    "step3Label": "Perbaikan",
+    "step3Desc": "Lihat kode koreksi, penjelasan, dan konsep terkait",
+    "guideQuickStart": "Mulai Cepat",
+    "guideUpload": "Unggah File",
+    "guideKeyboard": "Pintasan Keyboard",
+    "guideResults": "Membaca Hasil Analisis",
+    "guidePrivacy": "Privasi & Keamanan",
+    "quickStartItems": [
+      "Unggah file atau ketik kode langsung di editor",
+      "Klik \"Analisis\" atau tekan Ctrl+Enter",
+      "Lihat hasil: skor, error, peringatan, dan saran perbaikan"
+    ],
+    "uploadItems": [
+      "Seret & lepas, file individual, atau seluruh folder",
+      "20+ bahasa didukung: Python, JS, TS, Java, C++, Go, Rust, dll",
+      "Maks 5MB per file, kode dibersihkan sebelum dikirim"
+    ],
+    "keyboardItems": [
+      "Ctrl+Enter: jalankan analisis",
+      "Ctrl+C: salin kode",
+      "Ctrl+Z / Ctrl+Y: urungkan / ulang"
+    ],
+    "resultsItems": [
+      "Tab Hasil: skor, error, warning, saran perbaikan",
+      "Tab Perbaikan: kode diperbaiki + daftar perubahan",
+      "Tab Belajar: konsep pemrograman terkait error",
+      "Detail error: lokasi baris & penjelasan penyebab"
+    ],
+    "privacyItems": [
+      "Kode tidak pernah disimpan di server",
+      "API key tetap di browser Anda (localStorage)",
+      "Tidak ada pelacakan atau pihak ketiga"
+    ],
+    "viewGuides": "Lihat Panduan",
+    "guideTips": "Tips Belajar Efektif",
+    "tipsItems": [
+      "Ikuti panduan berurutan: Logic → Debugging → IDE...",
+      "Kerjakan quiz di akhir tiap bab untuk membuka guide berikutnya",
+      "Tandai section selesai untuk melacak progress",
+      "Coba tantangan coding di halaman Tantangan"
+    ]
+  },
+  "fileUpload": {
+    "selectLang": "Pilih bahasa untuk {{name}}:",
+    "cancel": "Batal"
+  },
+  "editorPage": {
+    "editorTab": "Koreksi",
+    "analysisTab": "Hasil Analisis"
+  },
+  "codeEditor": {
+    "emptyTitle": "Ketik kode atau unggah file untuk mulai menganalisis",
+    "emptyDesc": "Seret & lepas file di sini juga",
+    "clearAll": "Bersihkan semua",
+    "rename": "Ubah Nama"
+  },
+  "riwayat": {
+    "title": "Riwayat Analisis",
+    "titleChallenges": "Riwayat Tantangan",
+    "subtitle": "{{count}} analisis tersimpan",
+    "searchPlaceholder": "Cari riwayat berdasarkan kode...",
+    "emptyTitle": "Belum ada riwayat analisis",
+    "emptyDesc": "Analisis kode pertama Anda akan muncul di sini",
+    "emptySearchTitle": "Tidak ada hasil pencarian",
+    "emptySearchDesc": "Coba kata kunci lain",
+    "deleteEntry": "Hapus Riwayat",
+    "deleteEntryMsg": "Anda yakin ingin menghapus riwayat ini? Tindakan ini tidak dapat dibatalkan.",
+    "deleteEntryConfirm": "Ya, Hapus",
+    "deleteAllHistory": "Hapus Semua Riwayat",
+    "deleteAllHistoryMsg": "Anda yakin ingin menghapus semua riwayat analisis? Tindakan ini tidak dapat dibatalkan.",
+    "deleteAllHistoryConfirm": "Ya, Hapus Semua",
+    "restoreCode": "Pulihkan Kode",
+    "restoreCodeMsg": "Kode dari riwayat ini akan dipulihkan ke editor beserta analisisnya. Kode editor saat ini akan diganti. Lanjutkan?",
+    "restoreCodeConfirm": "Ya, Pulihkan",
+    "restoreHint": "Pulihkan kode ke editor",
+    "historyDeleted": "Riwayat dihapus",
+    "allHistoryDeleted": "Semua riwayat dihapus",
+    "codeRestored": "Kode dipulihkan ke editor!",
+    "exportJsonSuccess": "Ekspor JSON berhasil",
+    "exportCsvSuccess": "Ekspor CSV berhasil",
+    "importSuccess": "{{count}} catatan berhasil diimpor",
+    "importFailed": "Gagal mengimpor: {{error}}",
+    "importEmpty": "Tidak ada data untuk diimpor",
+    "importNotAnalysis": "File ini bukan data riwayat analisis. Gunakan file yang diekspor dari tab Riwayat Analisis.",
+    "importNotChallenge": "File ini bukan data riwayat tantangan. Gunakan file yang diekspor dari tab Riwayat Tantangan.",
+    "importInvalidFormat": "Format file tidak valid",
+    "importUnsupported": "Format file tidak didukung. Gunakan .json atau .csv",
+    "csvEmpty": "CSV kosong atau tidak valid",
+    "importBtn": "Impor",
+    "deleteAllBtn": "Hapus Semua",
+    "tabAnalysis": "Analisis",
+    "tabChallenges": "Tantangan",
+    "deleteChallengeEntry": "Hapus Riwayat Tantangan",
+    "deleteChallengeEntryMsg": "Anda yakin ingin menghapus riwayat tantangan ini? Tindakan ini tidak dapat dibatalkan.",
+    "deleteAllChallenges": "Hapus Semua Riwayat Tantangan",
+    "deleteAllChallengesMsg": "Semua riwayat tantangan akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.",
+    "deleteAllChallengesConfirm": "Ya, Hapus Semua Tantangan",
+    "challengesSubtitle": "{{completed}} selesai, {{total}} total"
+  },
+  "challenge": {
+    "title": "Tantangan Coding",
+    "subtitle": "Latih keterampilan coding Anda dengan tantangan berbasis AI",
+    "easyDesc": "Konsep dasar, logika sederhana",
+    "mediumDesc": "Algoritma, struktur data",
+    "hardDesc": "Optimalisasi, kasus tepi kompleks",
+    "generating": "Membuat tantangan...",
+    "newChallenge": "Tantangan Baru",
+    "testCases": "Kasus Uji",
+    "openInEditor": "Mulai Tantangan",
+    "markDone": "Selesai",
+    "hints": "Petunjuk",
+    "solution": "Solusi",
+    "selectDifficulty": "Pilih tingkat kesulitan untuk memulai",
+    "modeFix": "Perbaiki Kode",
+    "check": "Periksa",
+    "giveUp": "Menyerah",
+    "solutionLabel": "Jawaban benar:",
+    "completedCount": "{{count}} tantangan selesai",
+    "completed": "Tantangan selesai!",
+    "input": "Input",
+    "output": "Output",
+    "surrender": "Menyerah",
+    "hideSurrender": "Sembunyikan",
+    "surrenderCardTitle": "Solusi & Penjelasan",
+    "resetSurrender": "Tantangan Berikutnya"
+  },
+  "convert": {
+    "targetLang": "Bahasa Target",
+    "source": "Sumber",
+    "converting": "Mengkonversi...",
+    "convertBtn": "Konversi ke {{lang}}",
+    "loadToEditor": "Muat ke Editor",
+    "convertAgain": "Konversi Lagi",
+    "clearResult": "Bersihkan hasil konversi"
+  },
+  "vulnerability": {
+    "critical": "Kritis",
+    "high": "Tinggi",
+    "medium": "Sedang",
+    "low": "Rendah"
+  },
+  "modal": {
+    "cancel": "Batal",
+    "confirmDelete": "Ya, Hapus"
+  },
+  "notFound": {
+    "title": "Halaman tidak ditemukan",
+    "back": "Kembali ke Beranda"
+  },
+  "toast": {
+    "codeCopied": "Kode disalin!",
+    "codePasted": "Kode ditempel!",
+    "fileCleared": "File dibersihkan",
+    "noCodeToAnalyze": "Tidak ada kode untuk dianalisis",
+    "copied": "Disalin!"
+  },
+  "guides": {
+    "title": "Panduan Belajar",
+    "subtitle": "Panduan dasar untuk memahami konsep pemrograman dan alat pengembangan",
+    "openGuide": "Buka Panduan",
+    "backToList": "Kembali ke Daftar",
+    "notFound": "Panduan tidak ditemukan",
+    "loading": "Memuat panduan...",
+    "noContent": "Konten panduan belum tersedia",
+    "tableOfContent": "Daftar Isi",
+    "markComplete": "Tandai Selesai",
+    "completed": "Selesai",
+    "quizRequire": "Selesaikan kuis untuk melanjutkan",
+    "quizComplete": "Kuis selesai!",
+    "logic": {
+      "title": "Dasar Logika Pemrograman",
+      "desc": "Pahami alur, kondisi, dan pengulangan dengan pseudocode yang tidak terikat bahasa.",
+      "items": [
+        "Alur (sequence): langkah eksekusi berurutan dari atas ke bawah",
+        "Percabangan (conditional): if/else, keputusan berdasarkan kondisi true/false",
+        "Perulangan (loop): for, while, for-each untuk mengulang aksi",
+        "Fungsi/prosedur: kelompokkan langkah yang dapat dipanggil kembali",
+        "Variabel & tipe data: angka, teks, boolean, simpan dan ubah nilai",
+        "Operator: aritmetika (+,-,*,/), komparasi (==,>,<), logika (AND, OR, NOT)",
+        "Pseudocode: deskripsikan algoritma dalam bahasa alami sebelum mengkode"
+      ],
+      "detail": {
+        "summary": "Logika pemrograman adalah fondasi berpikir algoritmik. Ini tidak terikat bahasa apapun, kuatkan dulu, baru pilih bahasa.",
+        "sections": [
+          {
+            "title": "Bab 1: Pengantar Algoritma dan Struktur Dasar",
+            "content": "Algoritma adalah langkah-langkah logis terurut untuk menyelesaikan masalah. Setiap langkah harus jelas dan dapat diuji.",
+            "bullets": [
+              "Rangkaikan masalah menjadi sub-masalah yang lebih kecil",
+              "Urutkan langkah satu per satu secara logis",
+              "Pastikan setiap langkah memiliki kondisi akhir yang jelas",
+              "Gunakan flowchart untuk visualisasi alur kerja"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/6/67/Flowgorithm_Input_Process_Output.svg",
+            "imageCaption": "Alur algoritma dasar: Input - Proses - Output | Wikimedia Commons"
+          },
+          {
+            "title": "Bab 2: Kontrol Alur Program",
+            "content": "Program mengikuti tiga struktur kontrol dasar: sekuensial, percabangan, dan perulangan.",
+            "bullets": [
+              "Sekuensial: eksekusi berurutan dari atas ke bawah",
+              "Percabangan: if, else if, else untuk pengambilan keputusan",
+              "Perulangan: for, while, do-while untuk pengulangan aksi",
+              "Switch-case untuk multi-kondisi diskrit"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/3/31/Flowchart_-_While-loop.ru.svg",
+            "imageCaption": "Struktur kontrol while-loop | Wikimedia Commons"
+          },
+          {
+            "title": "Bab 3: Praktik dengan Pseudocode",
+            "content": "Pseudocode membantu fokus pada logika sebelum implementasi bahasa spesifik.",
+            "bullets": [
+              "Gunakan bahasa alami dengan struktur terstandar",
+              "Fokus pada what bukan how (algoritma bukan sintaks)",
+              "Ciptakan kasus uji sebelum menulis kode",
+              "Iterasi dan perbaiki pseudocode sebelum coding"
+            ],
+            "visual": "logic-pseudo"
+          }
+        ],
+        "quiz": {
+          "title": "Kuis: Dasar Logika Pemrograman",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Apa itu algoritma?",
+              "options": [
+                "Kumpulan variabel",
+                "Langkah logis terurut untuk menyelesaikan masalah",
+                "Tipe data",
+                "Library"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "Untuk membuat keputusan dalam pemrograman, struktur yang digunakan adalah?",
+              "options": [
+                "Loop",
+                "Function",
+                "Conditional (if/else)",
+                "Variabel"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q3",
+              "question": "Manakah yang BUKAN merupakan tipe data?",
+              "options": [
+                "Number",
+                "Text (string)",
+                "Boolean",
+                "Operator"
+              ],
+              "answer": 3
+            },
+            {
+              "id": "q4",
+              "question": "Loop mana yang cocok untuk pengulangan berdasarkan kondisi?",
+              "options": [
+                "for",
+                "while",
+                "for-each",
+                "do-while"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "Pseudocode digunakan untuk?",
+              "options": [
+                "Menyimpan file",
+                "Mendeskripsikan algoritma dalam bahasa alami sebelum mengkode",
+                "Mengkompilasi kode",
+                "Menghubungkan ke database"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "debugging": {
+      "title": "Debugging Dasar",
+      "desc": "Temukan dan perbaiki bug dalam kode Anda melalui proses yang sistematis.",
+      "items": [
+        "Kenali jenis error: syntax, runtime, logic",
+        "Sisipkan console.log/print untuk memantau nilai variabel",
+        "Isolasi: komentari kode yang dicurigai, lalu persempit",
+        "Kasus tepi: uji nilai ekstrem (kosong, nol, negatif, sangat besar)",
+        "Reproduksi: pastikan error terjadi secara konsisten"
+      ],
+      "detail": {
+        "summary": "Debugging bukan menebak error, ini adalah proses sistematis isolasi dan verifikasi dari pesan hingga reproduksi.",
+        "sections": [
+          {
+            "title": "Pernyataan Print",
+            "content": "Sisipkan output log untuk memantau nilai variabel saat runtime. Hapus atau ganti dengan debugger setelahnya.",
+            "bullets": [
+              "console.log / print",
+              "beri label output Anda",
+              "hapus sebelum rilis"
+            ],
+            "visual": "debugging-print"
+          },
+          {
+            "title": "Mengisolasi Masalah",
+            "content": "Komentari blok kode yang dicurigai. Jika error menghilang, blok tersebut bersalah. Kurangi input ke minimum.",
+            "bullets": [
+              "komentari secara bertahap",
+              "buat input uji minimal",
+              "periksa perubahan terbaru"
+            ],
+            "visual": "debugging-isolate"
+          },
+          {
+            "title": "Menguji Kasus Tepi",
+            "content": "Bug sering bersembunyi di nilai ekstrem: input kosong, nol, negatif, atau data sangat besar.",
+            "bullets": [
+              "uji batas bawah",
+              "uji batas atas",
+              "uji kasus tidak biasa"
+            ],
+            "visual": "debugging-edge"
+          }
+        ],
+        "quiz": {
+          "title": "Kuis: Debugging Dasar",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Stack trace biasanya dibaca dari?",
+              "options": [
+                "Bawah ke atas",
+                "Atas ke bawah",
+                "Acak",
+                "Diagonal"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "Teknik isolasi masalah yang benar adalah?",
+              "options": [
+                "Nyalakan ulang komputer",
+                "Komentari kode yang dicuragai, lalu minimalkan input",
+                "Tambah console.log di setiap baris",
+                "Hapus semua kode"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q3",
+              "question": "Apa arti \"kasus tepi\" dalam debugging?",
+              "options": [
+                "Nilai normal",
+                "Nilai ekstrem seperti kosong, nol, negatif",
+                "Nilai acak",
+                "Nilai null"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q4",
+              "question": "Rubber duck debugging adalah?",
+              "options": [
+                "Breakpoint IDE",
+                "Menjelaskan kode dengan suara keras untuk menemukan kekurangan logika",
+                "Profiling performa",
+                "Unit testing"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "\"Mereproduksi error\" berarti?",
+              "options": [
+                "Abaikan error",
+                "Pastikan error terjadi secara konsisten",
+                "Ganti komputer",
+                "Perbarui library"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "ide": {
+      "title": "Pengenalan Code Editor & Lingkungan Kerja (IDE)",
+      "desc": "Navigasi editor, pasang ekstensi penting, dan jalankan kode langsung dari VS Code.",
+      "items": [
+        "Explorer: lihat dan kelola berkas proyek",
+        "Terminal Terintegrasi: jalankan perintah tanpa keluar editor",
+        "Search: cari teks di seluruh proyek",
+        "Extension Marketplace: pasang Error Lens, Live Server, Prettier",
+        "Live Server / Live Preview untuk HTML",
+        "npm run scripts untuk proyek"
+      ],
+      "detail": {
+        "summary": "Code editor adalah tempat Anda menulis kode. IDE menyatukan editor, terminal, dan alat bantu lain. Kenali antarmukanya agar tidak tersesat.",
+        "sections": [
+          {
+            "title": "Antarmuka VS Code",
+            "content": "VS Code menyusun fitur utama di panel samping dan bilah bawah. Kenali area ini agar navigasi nyaman sejak pertama kali pakai.",
+            "bullets": [
+              "Explorer: lihat dan kelola berkas proyek",
+              "Terminal Terintegrasi: jalankan perintah tanpa keluar editor",
+              "Search: cari teks di seluruh proyek",
+              "Extension Marketplace: pasang ekstensi tambahan"
+            ],
+            "visual": "ide-nav"
+          },
+          {
+            "title": "Ekstensi Penting",
+            "content": "Ekstensi menambah fitur VS Code. Pasang yang meningkatkan produktivitas dan menangkap error sejak dini.",
+            "bullets": [
+              "Error Lens: tampilkan error langsung di kode",
+              "Live Server: buka preview web otomatis",
+              "Prettier: format kode konsisten",
+              "Live Share: kolaborasi menulis kode"
+            ]
+          },
+          {
+            "title": "Menjalankan Kode",
+            "content": "Jalankan script langsung dari editor. Simpan dulu, lalu perhatikan pesan error di output.",
+            "bullets": [
+              "Live Server / Live Preview untuk HTML/CSS",
+              "Terminal terintegrasi untuk eksekusi langsung",
+              "npm run scripts untuk proyek yang sudah ada",
+              "Perhatikan pesan error di panel output"
+            ]
+          }
+        ],
+        "quiz": {
+          "title": "Kuis: Pengenalan Code Editor & IDE",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "VS Code adalah contoh dari?",
+              "options": [
+                "Database",
+                "Code editor / IDE",
+                "Web browser",
+                "Terminal"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "Ekstensi apa yang menampilkan error langsung di kode?",
+              "options": [
+                "Live Share",
+                "Prettier",
+                "Error Lens",
+                "Live Server"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q3",
+              "question": "Live Server digunakan untuk?",
+              "options": [
+                "Mengedit kode",
+                "Memformat kode",
+                "Membuka preview web otomatis",
+                "Mengelola ekstensi"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q4",
+              "question": "Prettier berfungsi untuk?",
+              "options": [
+                "Menggabungkan kode",
+                "Memformat kode agar konsisten",
+                "Mengompilasi kode",
+                "Menghapus error"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "Terminal terintegrasi di VS Code memungkinkan?",
+              "options": [
+                "Menulis kode",
+                "Menjalankan perintah tanpa keluar",
+                "Membuka browser",
+                "Mengelola berkas"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "git": {
+      "title": "Git Dasar",
+      "desc": "Konsep version control: commit, branch, merge, dan kerja tim.",
+      "items": [
+        "git init: buat repository lokal baru",
+        "git add <file> / git add .: siapkan file untuk commit",
+        "git commit -m \"pesan\": simpan snapshot perubahan Anda",
+        "git status: lihat file yang diubah/tidak dilacak",
+        "git log: lihat riwayat commit",
+        "git branch: buat branch paralel",
+        "git checkout <branch>: beralih ke branch lain",
+        "git merge <branch>: gabungkan perubahan dari branch lain",
+        "git push/pull: sinkronkan dengan repository remote"
+      ],
+      "detail": {
+        "summary": "Git melacak riwayat kode Anda. Gunakan branch untuk mengisolasi fitur, lalu gabungkan dengan aman.",
+        "sections": [
+          {
+            "title": "Apa Itu Git?",
+            "content": "Sistem version control terdistribusi. Setiap clone membawa riwayat lengkap.",
+            "bullets": [
+              "lokal",
+              "snapshot per-commit",
+              "dapat dibatalkan"
+            ],
+            "visual": "git-intro"
+          },
+          {
+            "title": "Staging & Commit",
+            "content": "git add menandai file, git commit membuat snapshot. Pesan commit yang baik mendokumentasikan alasannya.",
+            "bullets": [
+              "git add",
+              "git commit -m",
+              "snapshot"
+            ],
+            "visual": "git-commit"
+          },
+          {
+            "title": "Branching",
+            "content": "Branch adalah garis riwayat paralel. Kerjakan fitur di branch, pertahankan main tetap stabil.",
+            "bullets": [
+              "git branch",
+              "git checkout",
+              "paralel aman"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Git_operations.svg",
+            "imageCaption": "Operasi Git (branch) | Wikimedia Commons"
+          },
+          {
+            "title": "Merging",
+            "content": "Bawa satu branch ke branch lain. Fast-forward jika linier; selesaikan konflik jika tumpang tindih.",
+            "bullets": [
+              "git merge",
+              "konflik",
+              "fast-forward"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Git_operations.svg",
+            "imageCaption": "Operasi Git (merge) | Wikimedia Commons"
+          },
+          {
+            "title": "Remote",
+            "content": "push mengunggah, pull mengambil. Pull Request adalah permintaan merge yang ditinjau melalui UI.",
+            "bullets": [
+              "git push",
+              "git pull",
+              "Pull Request"
+            ],
+            "visual": "git-remote"
+          }
+        ],
+        "quiz": {
+          "title": "Kuis: Git Dasar",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "git init digunakan untuk?",
+              "options": [
+                "Push",
+                "Buat repository lokal baru",
+                "Clone",
+                "Merge"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "git add digunakan untuk?",
+              "options": [
+                "Commit",
+                "Siapkan file untuk commit",
+                "Buat branch",
+                "Pull"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q3",
+              "question": "Branch digunakan untuk?",
+              "options": [
+                "Hapus file",
+                "Riwayat paralel untuk fitur",
+                "Mengompresi",
+                "Mengganti nama"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q4",
+              "question": "git push?",
+              "options": [
+                "Unduh",
+                "Unggah",
+                "Merge",
+                "Diff"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "Konflik merge terjadi ketika?",
+              "options": [
+                "Selalu fast-forward",
+                "Perubahan tumpang tindih",
+                "Commit pertama",
+                "Branch baru"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "prompt": {
+      "title": "Belajar Berbantu AI",
+      "desc": "Gunakan AI untuk mempelajari dan memahami kode, dari penjelasan hingga refactoring.",
+      "items": [
+        "Gunakan AI untuk menjelaskan konsep dan memberi contoh",
+        "Berikan role yang jelas agar AI merespons sesuai tujuan",
+        "Mintalah AI menjelaskan dan merapikan kode (refactoring)",
+        "AI bisa salah, selalu verifikasi dan uji manual",
+        "Prompt: role, konteks, format output, contoh"
+      ],
+      "detail": {
+        "summary": "AI bisa menjadi asisten belajar yang baik. Gunakan untuk menjelaskan konsep, memberi contoh, dan merapikan kode. Ingat: AI adalah alat, bukan pengganti berpikir Anda.",
+        "sections": [
+          {
+            "title": "Menggunakan AI untuk Belajar",
+            "content": "AI dapat menjelaskan konsep, memberi contoh kode, dan menjawab pertanyaan. Beri petunjuk yang jelas agar jawabannya relevan dan mudah dimengerti.",
+            "bullets": [
+              "Tanyakan penjelasan dengan contoh konkret",
+              "Mintalah AI memecah konsep kompleks menjadi langkah kecil",
+              "Gunakan AI untuk menerjemahkan istilah asing"
+            ]
+          },
+          {
+            "title": "Memberi Role yang Tepat",
+            "content": "Atur 'peran' AI agar nada dan kedalaman jawabannya sesuai tujuan belajar Anda.",
+            "bullets": [
+              "Anda adalah seorang: guru, reviewer, ahli",
+              "Sesuaikan nada dengan tujuan belajar",
+              "Sertakan konteks dan tingkat kesulitan"
+            ]
+          },
+          {
+            "title": "Refactoring & Penjelasan Kode",
+            "content": "Mintalah AI menjelaskan baris kode yang rumit, memberi saran struktur yang lebih rapi, atau menambahkan komentar.",
+            "bullets": [
+              "Mintakan penjelasan baris demi baris untuk kode yang tidak jelas",
+              "AI dapat menyarankan struktur kode yang lebih bersih",
+              "Gunakan AI untuk menambahkan komentar pada kode"
+            ]
+          },
+          {
+            "title": "Batasan & Verifikasi",
+            "content": "AI tidak sempurna - ia bisa menjawab salah (hallucination). Selalu cek dan jalankan kode secara manual.",
+            "bullets": [
+              "AI bisa memberi jawaban yang salah",
+              "Selalu uji kode secara manual",
+              "Jelaskan ulang hasil ke diri sendiri"
+            ]
+          }
+        ],
+        "quiz": {
+          "title": "Kuis: AI-Assisted Learning",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "AI digunakan untuk belajar pemrograman agar?",
+              "options": [
+                "Mengganti buku pemrograman",
+                "Menjelaskan konsep dan memberi contoh",
+                "Menulis kode otomatis",
+                "Mengganti komputer"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "Memberi 'role' pada AI bertujuan untuk?",
+              "options": [
+                "Mengatur nada dan kedalaman jawaban AI",
+                "Menyebabkan error",
+                "Mendefinisikan format file",
+                "Mengonfigurasi jaringan"
+              ],
+              "answer": 0
+            },
+            {
+              "id": "q3",
+              "question": "Refactoring berarti?",
+              "options": [
+                "Menghapus semua kode",
+                "Menyalin kode ke dokumen lain",
+                "Membongkar dan merapikan struktur kode yang ada",
+                "Mengganti bahasa pemrograman"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q4",
+              "question": "AI dapat membantu menjelaskan kode dengan cara?",
+              "options": [
+                "Menyembunyikan error",
+                "Memberi nama acak",
+                "Menjelaskan baris rumit dan memberi saran struktur rapi",
+                "Mengompilasi kode"
+              ],
+              "answer": 2
+            },
+            {
+              "id": "q5",
+              "question": "Apa risiko menggunakan AI untuk belajar?",
+              "options": [
+                "Kode menjadi lambat",
+                "AI bisa memberi jawaban salah",
+                "Koneksi internet putus",
+                "File akan hilang"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "linux": {
+      "title": "Linux CLI Dasar",
+      "desc": "Navigasi sistem file dan jalankan operasi dasar melalui terminal.",
+      "items": [
+        "pwd: cetak direktori saat ini",
+        "ls: lihat isi folder termasuk package.json & requirements.txt",
+        "cd <dir>: ganti direktori",
+        "mkdir <dir>: buat direktori",
+        "touch/cp/mv/rm: buat, salin, pindah, hapus file",
+        "cat/less/more: baca isi file",
+        "grep: cari teks di dalam file",
+        "pipe | : kirim output satu perintah ke perintah lain",
+        "chmod: atur izin file"
+      ],
+      "detail": {
+        "summary": "Terminal adalah jalur langsung ke sistem Anda. Menguasai perintah inti meningkatkan produktivitas Anda.",
+        "sections": [
+          {
+            "title": "Navigasi Direktori",
+            "content": "Ketahui di mana Anda berada dan berpindah dengan cepat.",
+            "bullets": [
+              "pwd",
+              "ls",
+              "cd"
+            ],
+            "visual": "linux-nav"
+          },
+          {
+            "title": "Operasi File & Direktori",
+            "content": "Buat, salin, pindah, dan hapus file serta direktori.",
+            "bullets": [
+              "touch",
+              "cp",
+              "mv",
+              "rm",
+              "mkdir"
+            ],
+            "visual": "linux-files"
+          },
+          {
+            "title": "Membaca File",
+            "content": "cat mencetak isi; less/more memungkinkan Anda menggulir file panjang.",
+            "bullets": [
+              "cat",
+              "less",
+              "more",
+              "head",
+              "tail"
+            ],
+            "visual": "linux-read"
+          },
+          {
+            "title": "Pipe & Redirect",
+            "content": "Pipe | menstream output satu perintah ke perintah lain. Redirect > menulis ke file.",
+            "bullets": [
+              "|",
+              ">",
+              ">>",
+              "2>&1"
+            ],
+            "visual": "linux-pipe"
+          },
+          {
+            "title": "Izin",
+            "content": "chmod mengatur siapa yang bisa baca/tulis/eksekusi. rwx = read/write/execute.",
+            "bullets": [
+              "rwx",
+              "chmod",
+              "755"
+            ],
+            "visual": "linux-perm"
+          }
+        ],
+        "quiz": {
+          "title": "Kuis: Linux CLI Dasar",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "pwd digunakan untuk?",
+              "options": [
+                "Daftar",
+                "Cetak direktori kerja",
+                "Ganti direktori",
+                "Buat direktori"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "ls digunakan untuk?",
+              "options": [
+                "Daftar isi direktori",
+                "Ganti direktori",
+                "Buat file",
+                "Hapus file"
+              ],
+              "answer": 0
+            },
+            {
+              "id": "q3",
+              "question": "Pipe | berarti?",
+              "options": [
+                "Stream output ke perintah lain",
+                "Redirect ke file",
+                "Hapus output",
+                "Keluar"
+              ],
+              "answer": 0
+            },
+            {
+              "id": "q4",
+              "question": "chmod digunakan untuk?",
+              "options": [
+                "Izin file",
+                "Pindah file",
+                "Salin",
+                "Ganti nama"
+              ],
+              "answer": 0
+            },
+            {
+              "id": "q5",
+              "question": "Redirect >?",
+              "options": [
+                "Tambah",
+                "Tulis ke file",
+                "Ke variabel",
+                "Keluar"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "build": {
+      "title": "Dasar Build & Manajemen Dependensi",
+      "desc": "Cara proyek dibangun dan bagaimana dependensinya dikelola.",
+      "items": [
+        "Build: ubah kode sumber menjadi artefak yang dapat dijalankan",
+        "Package manager: npm, pip, cargo, instal dependensi",
+        "File manifest: package.json, requirements.txt, Cargo.toml",
+        "Resolusi dependensi: versi yang kompatibel, file lock",
+        "Versioning semantik: MAJOR.MINOR.PATCH"
+      ],
+      "detail": {
+        "summary": "Build mengkompilasi kode sumber dan dependensi menjadi artefak yang dapat dijalankan. Manajemen dependensi menjaga setiap library pada versi yang konsisten.",
+        "sections": [
+          {
+            "title": "Apa Itu Build?",
+            "content": "Proses yang mengubah kode dan dependensi Anda menjadi artefak yang dapat dijalankan.",
+            "bullets": [
+              "kompilasi",
+              "bundle",
+              "transpile"
+            ],
+            "visual": "build-def"
+          },
+          {
+            "title": "Package Manager",
+            "content": "Mereka mengambil dan mengelola library pihak ketiga untuk Anda.",
+            "bullets": [
+              "npm",
+              "pip",
+              "cargo"
+            ],
+            "visual": "build-pkg"
+          },
+          {
+            "title": "Manifest vs Lockfile",
+            "content": "Manifest mendeklarasikan apa yang Anda butuhkan; lockfile menetapkan versi yang persis.",
+            "bullets": [
+              "package.json",
+              "package-lock.json"
+            ],
+            "visual": "build-manifest"
+          },
+          {
+            "title": "Resolusi Dependensi",
+            "content": "Pilih versi yang kompatibel dan hindari konflik versi.",
+            "bullets": [
+              "caret",
+              "tilde",
+              "resolusi"
+            ],
+            "visual": "build-deps"
+          },
+          {
+            "title": "Versioning Semantik",
+            "content": "MAJOR.MINOR.PATCH. Patch memperbaiki, minor menambahkan, major mengubah.",
+            "bullets": [
+              "1.2.3",
+              "^",
+              "~"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Semver.svg",
+            "imageCaption": "Versioning Semantik | Wikimedia Commons"
+          }
+        ],
+        "quiz": {
+          "title": "Kuis: Dasar Build & Manajemen Dependensi",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Build adalah proses?",
+              "options": [
+                "Menghapus file",
+                "Mengkompilasi kode sumber menjadi artefak yang dapat dijalankan",
+                "Mengganti nama",
+                "Hanya mengompresi"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "npm adalah package manager untuk?",
+              "options": [
+                "Python",
+                "JavaScript",
+                "Rust",
+                "Go"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q3",
+              "question": "package.json berisi?",
+              "options": [
+                "Lockfile",
+                "Manifest dependensi",
+                "Kode sumber",
+                "Konfigurasi OS"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q4",
+              "question": "package-lock.json berisi?",
+              "options": [
+                "Kode sumber",
+                "Versi dependensi yang ditetapkan",
+                "README",
+                "Lisensi"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "Apa arti SemVer?",
+              "options": [
+                "Format tanggal",
+                "MAJOR.MINOR.PATCH",
+                "Acak",
+                "Nama penulis"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "security": {
+      "title": "Keamanan Dasar",
+      "desc": "Praktik sederhana yang mencegah kerentanan kode umum.",
+      "items": [
+        "Jangan pernah hardcode kredensial: gunakan .env untuk API key, kata sandi, token",
+        "Validasi input: periksa tipe, panjang, dan format sebelum digunakan",
+        "SQL injection: gunakan parameterized query, bukan penggabungan string",
+        "XSS: escape output HTML, jangan pernah render input mentah pengguna",
+        "HTTPS: enkripsi lalu lintas, jangan pernah kirim rahasia melalui HTTP biasa"
+      ],
+      "detail": {
+        "summary": "Tanamkan keamanan sejak awal. Validasi semua input dan jangan pernah simpan rahasia dalam kode.",
+        "sections": [
+          {
+            "title": "Validasi Input",
+            "content": "Perlakukan setiap input sebagai hostil. Validasi tipe, panjang, dan format.",
+            "bullets": [
+              "whitelist",
+              "pengecekan tipe",
+              "tolak"
+            ],
+            "visual": "security-input"
+          },
+          {
+            "title": "SQL Injection",
+            "content": "Penggabungan string mentah membuka serangan injeksi. Gunakan parameterized query.",
+            "bullets": [
+              "parameterized",
+              "prepared statements",
+              "jangan pernah concat"
+            ],
+            "visual": "security-sql"
+          },
+          {
+            "title": "XSS",
+            "content": "Merender input mentah pengguna menjalankan skrip yang disuntikkan. Escape semua output HTML.",
+            "bullets": [
+              "escape",
+              "templating",
+              "CSP"
+            ],
+            "visual": "security-xss"
+          },
+          {
+            "title": "Manajemen Rahasia",
+            "content": "API key, kata sandi, token tidak boleh pernah di-hardcode. Gunakan env vars atau vault.",
+            "bullets": [
+              "env vars",
+              ".env",
+              "vault"
+            ],
+            "visual": "security-secret"
+          },
+          {
+            "title": "Keamanan Transport",
+            "content": "Kirim data sensitif melalui HTTPS/TLS, jangan pernah HTTP biasa.",
+            "bullets": [
+              "TLS",
+              "HTTPS",
+              "sertifikat valid"
+            ],
+            "image": "https://upload.wikimedia.org/wikipedia/commons/4/4f/TLS_1.3_Handshake.png",
+            "imageCaption": "TLS 1.3 Handshake | Wikimedia Commons (CC BY-SA 4.0)"
+          }
+        ],
+        "quiz": {
+          "title": "Kuis: Keamanan Dasar",
+          "questions": [
+            {
+              "id": "q1",
+              "question": "Mengapa hardcoding kredensial berbahaya?",
+              "options": [
+                "Lambat",
+                "Rentan terhadap kebocoran",
+                "Tidak nyaman",
+                "Tidak portabel"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q2",
+              "question": "SQL injection dicegah dengan menggunakan?",
+              "options": [
+                "Penggabungan string",
+                "Parameterized query",
+                "Komentar",
+                "Indeks"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q3",
+              "question": "XSS dicegah dengan?",
+              "options": [
+                "Merender input mentah",
+                "Escape HTML",
+                "SQL",
+                "JSON"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q4",
+              "question": "API key seharusnya disimpan di?",
+              "options": [
+                "Hardcode di kode",
+                "Variabel lingkungan / vault",
+                "Komentar",
+                "Nama file"
+              ],
+              "answer": 1
+            },
+            {
+              "id": "q5",
+              "question": "HTTP berbahaya karena?",
+              "options": [
+                "Lambat",
+                "Mengirim teks biasa (tidak terenkripsi)",
+                "Redirect",
+                "Menggunakan cookie"
+              ],
+              "answer": 1
+            }
+          ]
+        }
+      }
+    },
+    "quizCheck": "Periksa Jawaban",
+    "quizReset": "Ulangi Kuis",
+    "quizScore": "Skor",
+    "quizPassed": "Selamat! Semua benar.",
+    "quizNotAllCorrect": "Belum semua benar. Periksa kembali, lalu coba lagi.",
+    "quizCorrect": "Benar",
+    "quizIncorrect": "Salah",
+    "quizYouPicked": "Anda pilih",
+    "needsRetry": "Perlu Ulangi",
+    "locked": "Terkunci",
+    "unlockHint": "Selesaikan guide sebelumnya untuk membuka"
+  }
+}

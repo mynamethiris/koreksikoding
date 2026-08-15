@@ -1,0 +1,215 @@
+@import "tailwindcss";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius: 0.625rem;
+
+  --color-background: #f8f6f1;
+  --color-foreground: #1c1917;
+  --color-card: #fefdfb;
+  --color-card-foreground: #1c1917;
+  --color-primary: #292524;
+  --color-primary-foreground: #faf8f5;
+  --color-secondary: #f0ece4;
+  --color-secondary-foreground: #292524;
+  --color-muted: #f0ece4;
+  --color-muted-foreground: #78716c;
+  --color-accent: #b45309;
+  --color-accent-foreground: #faf8f5;
+  --color-destructive: #b91c1c;
+  --color-destructive-foreground: #faf8f5;
+  --color-border: #e7e0d5;
+  --color-input: #e7e0d5;
+  --color-ring: #b45309;
+
+  --color-success: #15803d;
+  --color-success-foreground: #faf8f5;
+  --color-warning: #a16207;
+  --color-warning-foreground: #faf8f5;
+--color-info: #b45309;
+--color-info-foreground: #faf8f5;
+
+ --shadow: 0 1px 3px 0 rgb(28 25 23 / 0.06), 0 1px 2px -1px rgb(28 25 23 / 0.06);
+}
+
+.dark {
+  --color-background: #141210;
+  --color-foreground: #f5f0e8;
+  --color-card: #1e1b18;
+  --color-card-foreground: #f5f0e8;
+  --color-primary: #f5f0e8;
+  --color-primary-foreground: #1e1b18;
+  --color-secondary: #2a2621;
+  --color-secondary-foreground: #f5f0e8;
+  --color-muted: #2a2621;
+  --color-muted-foreground: #a8a29e;
+  --color-accent: #d97706;
+  --color-accent-foreground: #1e1b18;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #1e1b18;
+  --color-border: #2e2a24;
+  --color-input: #2e2a24;
+  --color-ring: #d97706;
+
+  --color-success: #22c55e;
+  --color-success-foreground: #141210;
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #141210;
+--color-info: #d97706;
+--color-info-foreground: #141210;
+
+ --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.25), 0 1px 2px -1px rgb(0 0 0 / 0.25);
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--color-border);
+}
+
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior: none;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+/* Custom scrollbar: Webkit */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted-foreground);
+  border-radius: 9999px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-foreground);
+  opacity: 1;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-muted-foreground) 40%, transparent) transparent;
+}
+
+/* Selection */
+::selection {
+  background-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  color: var(--color-foreground);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Page transition base */
+.page-transition {
+  min-height: 100dvh;
+}
+
+/* CodeMirror overrides */
+.cm-editor {
+  overflow: hidden;
+  height: 100%;
+}
+
+.cm-editor {
+  background-color: var(--color-card) !important;
+  color: var(--color-foreground) !important;
+}
+
+.cm-editor .cm-content {
+  color: var(--color-foreground) !important;
+}
+
+.cm-editor .cm-scroller {
+  font-family: var(--font-mono);
+}
+
+.cm-editor.cm-focused {
+  outline: none;
+}
+
+.cm-gutters {
+  border-right: 1px solid var(--color-border) !important;
+  background-color: var(--color-muted) !important;
+  color: var(--color-muted-foreground) !important;
+}
+
+.cm-editor .cm-activeLine {
+  background-color: color-mix(in srgb, var(--color-accent) 5%, transparent) !important;
+}
+
+.cm-editor .cm-selectionBackground,
+.cm-editor.cm-focused .cm-selectionBackground {
+  background-color: color-mix(in srgb, var(--color-accent) 45%, transparent) !important;
+}
+
+.cm-editor .cm-selectionMatch {
+  background-color: color-mix(in srgb, var(--color-accent) 20%, transparent) !important;
+}
+
+/* Bottom nav */
+@media (max-width: 639px) {
+  main {
+    padding-bottom: 80px;
+  }
+}
+
+/* Smooth page scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+.cm-editor .cm-cursor {
+  border-left-color: var(--color-accent) !important;
+}
+
+/* Hide browser native password reveal button */
+input::-webkit-reveal-button {
+  display: none;
+}
+input::-moz-revealer {
+  display: none;
+}
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+/* Marquee scroll for long names on hover */
+@keyframes marquee {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(-100%); }
+}
