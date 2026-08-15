@@ -58,7 +58,3 @@ Buka halaman **Pengaturan** untuk mengatur provider AI:
 3. **Custom Provider** - Tambah provider dengan endpoint OpenAI-compatible
 
 API key disimpan di `localStorage` browser Anda, tidak dikirim ke server manapun.
-
-## Lisensi
-
-MIT
