@@ -1,5 +1,5 @@
 import { useState, useRef, Component, type ReactNode } from 'react';
-import { AlertTriangle, AlertCircle, Info, CheckCircle, ChevronDown, Copy, Check, Wrench, Lightbulb, GraduationCap, Download, ExternalLink, Shield } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, CheckCircle, ChevronDown, Copy, Check, Wrench, Lightbulb, GraduationCap, Download, ExternalLink, Shield, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
@@ -7,6 +7,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { VulnerabilityTab } from '@/components/VulnerabilityTab';
 import { DuplicationTab } from '@/components/DuplicationTab';
 import { downloadFile, exportToMarkdown, getCommunityLinks, getFileExtensionForLanguage } from '@/lib/api';
+import { AsyncError } from '@/components/AsyncStatus';
+import { useHasExceeded } from '@/lib/useSlowTimer';
 import toast from 'react-hot-toast';
 
 const STAT_COLORS: Record<string, { border: string; bg: string; text: string }> = {
@@ -257,7 +259,8 @@ function BelajarTab({ result }: { result: NonNullable<ReturnType<typeof useApp>[
 
 export function AnalysisPanel() {
   const { t } = useTranslation();
-  const { analysisResult, isAnalyzing, activeResultTab, setActiveResultTab, files, activeFileId, activeProvider } = useApp();
+  const { analysisResult, isAnalyzing, analysisError, activeResultTab, setActiveResultTab, files, activeFileId, activeProvider, runAnalysis } = useApp();
+  const showRefresh = useHasExceeded(isAnalyzing);
   const result = analysisResult;
   const activeFile = files.find((f) => f.id === activeFileId);
 
@@ -286,6 +289,10 @@ export function AnalysisPanel() {
     toast.success(t('analysis.markdownExport'));
   };
 
+  if (analysisError) {
+    return <AsyncError error={analysisError} onRetry={runAnalysis} />;
+  }
+
   if (isAnalyzing) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-5 p-4">
@@ -308,6 +315,17 @@ export function AnalysisPanel() {
         <div className="text-center space-y-1">
           <p className="text-sm font-medium text-foreground">{t('analysis.analyzing')}</p>
           <p className="text-xs text-muted-foreground">{t('analysis.sendingTo', { provider: activeProvider.name })}</p>
+          {showRefresh && (
+            <motion.button
+              onClick={runAnalysis}
+              className="flex items-center gap-1.5 mt-2 mx-auto px-3 py-1.5 text-xs font-medium rounded-lg border border-border hover:bg-muted text-muted-foreground transition-colors"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <RefreshCw size={11} />
+              {t('analysis.refresh')}
+            </motion.button>
+          )}
         </div>
       </div>
     );

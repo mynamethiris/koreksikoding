@@ -3,17 +3,20 @@ import { Terminal, Loader2, Trash2, AlertCircle, Info, Lightbulb, Copy, External
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { analyzeCode, getTerminalErrorPrompt, canAnalyze, recordAnalysis, sanitizeFixedCode, getCommunityLinks } from '@/lib/api';
+import { analyzeCode, getTerminalErrorPrompt, canAnalyze, recordAnalysis, sanitizeFixedCode, getCommunityLinks, parseAnalysisResponse, ApiError, getRateLimitRemaining } from '@/lib/api';
 import { db } from '@/lib/db';
+import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
 import { FadeIn } from '@/components/motion';
 import toast from 'react-hot-toast';
 import type { HistoryEntry, AnalysisResult } from '@/types';
 
 export function TerminalPage() {
   const { t, i18n } = useTranslation();
-  const { activeProvider, setAnalysisResult, setIsAnalyzing, isAnalyzing } = useApp();
+  const { activeProvider } = useApp();
   const [errorText, setErrorText] = useState('');
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = useCallback(async () => {
     const trimmed = errorText.trim();
@@ -25,12 +28,13 @@ export function TerminalPage() {
     }
 
     if (!canAnalyze()) {
-      toast.error(t('analysis.rateLimit'));
+      toast.error(t('analysis.rateLimit', { remaining: getRateLimitRemaining() }));
       return;
     }
 
     setIsAnalyzing(true);
     setResult(null);
+    setError(null);
 
     try {
       const prompt = getTerminalErrorPrompt();
@@ -41,14 +45,7 @@ export function TerminalPage() {
         prompt,
       );
 
-      let cleaned = rawResponse.trim();
-      if (cleaned.startsWith('```')) {
-        cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-      }
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('Invalid JSON response');
-
-      const parsed = JSON.parse(jsonMatch[0]);
+      const parsed = parseAnalysisResponse(rawResponse) as Record<string, unknown>;
 
       const analysisResult: AnalysisResult = {
         errors: (parsed.errors as any[]) || [],
@@ -66,30 +63,41 @@ export function TerminalPage() {
       };
 
       setResult(analysisResult);
-      setAnalysisResult(analysisResult);
       recordAnalysis();
 
-      const entry: HistoryEntry = {
-        id: crypto.randomUUID(),
-        code: trimmed,
-        language: 'javascript',
-        timestamp: Date.now(),
-        score: analysisResult.score,
-        errorCount: analysisResult.errors.length,
-        warningCount: analysisResult.warnings.length,
-        suggestionCount: analysisResult.suggestions.length,
-        result: analysisResult,
-      };
-      await db.addHistory(entry);
+      try {
+        const entry: HistoryEntry = {
+          id: crypto.randomUUID(),
+          code: trimmed,
+          language: 'javascript',
+          timestamp: Date.now(),
+          score: analysisResult.score,
+          errorCount: analysisResult.errors.length,
+          warningCount: analysisResult.warnings.length,
+          suggestionCount: analysisResult.suggestions.length,
+          result: analysisResult,
+        };
+        await db.addHistory(entry);
+      } catch (dbErr) {
+        console.error('Failed to save terminal analysis history:', dbErr);
+      }
 
       toast.success(t('analysis.analysisDone'));
     } catch (err) {
-      console.error('Terminal analysis failed:', err);
-      toast.error(t('analysis.analysisFailed', { error: err instanceof Error ? err.message : 'Unknown error' }));
+      let msg: string;
+      if (err instanceof ApiError) {
+        msg = err.message;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      } else {
+        msg = t('analysis.errorUnknown', { error: String(err) });
+      }
+      setError(msg);
+      toast.error(t('analysis.analysisFailed', { error: msg }));
     } finally {
       setIsAnalyzing(false);
     }
-  }, [errorText, activeProvider, setIsAnalyzing, setAnalysisResult, t]);
+  }, [errorText, activeProvider, t]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -164,7 +172,7 @@ export function TerminalPage() {
               </button>
               {errorText && (
                 <button
-                  onClick={() => { setErrorText(''); setResult(null); }}
+                  onClick={() => { setErrorText(''); setResult(null); setError(null); }}
                   className="flex items-center gap-1 px-3 py-2 text-xs rounded-lg hover:bg-muted text-muted-foreground transition-colors"
                 >
                   <Trash2 size={12} />
@@ -183,20 +191,15 @@ export function TerminalPage() {
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4">
             <AnimatePresence mode="wait">
-              {isAnalyzing && (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center gap-3 py-12"
-                >
-                  <Loader2 size={28} className="animate-spin text-accent" />
-                  <p className="text-sm text-muted-foreground">{t('terminal.analyzing')}</p>
-                </motion.div>
-              )}
+            {isAnalyzing && (
+              <AsyncLoading label={t('terminal.analyzing')} onRefresh={handleAnalyze} />
+            )}
 
-              {!isAnalyzing && result && (
+            {error && (
+              <AsyncError error={error} onRetry={handleAnalyze} />
+            )}
+
+            {!isAnalyzing && result && (
                 <motion.div
                   key="result"
                   initial={{ opacity: 0 }}
@@ -305,7 +308,7 @@ export function TerminalPage() {
                 </motion.div>
               )}
 
-              {!isAnalyzing && !result && (
+              {!isAnalyzing && !result && !error && (
                 <motion.div
                   key="empty"
                   initial={{ opacity: 0 }}

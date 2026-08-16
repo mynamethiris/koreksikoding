@@ -1,12 +1,17 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
-import type { EditorFile, AnalysisResult, Theme, AIProvider } from '@/types';
+import { useTranslation } from 'react-i18next';
+import type { EditorFile, AnalysisResult, Theme, AIProvider, HistoryEntry } from '@/types';
+import { analyzeCode, parseAnalysisResponse, canAnalyze, recordAnalysis, sanitizeCode, sanitizeFixedCode, getRateLimitRemaining, ApiError } from '@/lib/api';
 import { decryptApiKey } from '@/lib/crypto';
+import { db } from '@/lib/db';
+import toast from 'react-hot-toast';
 
 interface AppState {
   files: EditorFile[];
   activeFileId: string | null;
   analysisResult: AnalysisResult | null;
   isAnalyzing: boolean;
+  analysisError: string | null;
   theme: Theme;
   providers: AIProvider[];
   activeProvider: AIProvider;
@@ -23,6 +28,9 @@ interface AppContextType extends AppState {
   setActiveFileId: (id: string) => void;
   setAnalysisResult: (result: AnalysisResult | null) => void;
   setIsAnalyzing: (v: boolean) => void;
+  setAnalysisError: (v: string | null) => void;
+  clearAnalysisError: () => void;
+  runAnalysis: () => Promise<void>;
   toggleTheme: () => void;
   setActiveProvider: (provider: AIProvider) => void;
   setProviders: (providers: AIProvider[]) => void;
@@ -82,6 +90,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeFileId, setActiveFileId] = useState<string | null>(saved.activeFileId);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(() => loadAnalysisState());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(() => {
     return (localStorage.getItem('kk_theme') as Theme) || 'dark';
   });
@@ -91,7 +100,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (stored) {
         const parsed = JSON.parse(stored);
         const defaults = [
-          { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', model: 'gemini-2.5-flash', apiKey: '', isDefault: true },
+          { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true },
           { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen3-32b', apiKey: '', isDefault: true },
         ];
         return defaults.map((dp) => {
@@ -101,7 +110,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     } catch { }
     return [
-      { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', model: 'gemini-2.5-flash', apiKey: '', isDefault: true },
+      { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true },
       { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen3-32b', apiKey: '', isDefault: true },
     ];
   });
@@ -110,7 +119,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const activeId = localStorage.getItem('kk_active_provider') || 'gemini';
       const stored = localStorage.getItem('kk_providers');
       const defaults: AIProvider[] = [
-        { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', model: 'gemini-2.5-flash', apiKey: '', isDefault: true },
+        { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true },
         { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen3-32b', apiKey: '', isDefault: true },
       ];
       if (stored) {
@@ -123,7 +132,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return defaults[0];
     } catch {
-      return { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', model: 'gemini-2.5-flash', apiKey: '', isDefault: true };
+      return { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true };
     }
   });
   const [activeResultTab, setActiveResultTab] = useState(() => {
@@ -133,6 +142,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return localStorage.getItem(CUSTOM_PROMPT_KEY) || '';
   });
 
+  const { t } = useTranslation();
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -240,11 +250,91 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCustomPromptState(prompt);
   }, []);
 
+  const runAnalysis = useCallback(async () => {
+    const file = files.find((f) => f.id === activeFileId);
+    if (!file || !file.content.trim()) {
+      toast.error(t('analysis.noCode'));
+      return;
+    }
+    if (!activeProvider.apiKey) {
+      toast.error(t('analysis.noApiKey'));
+      return;
+    }
+    if (!canAnalyze()) {
+      toast.error(t('analysis.rateLimit', { remaining: getRateLimitRemaining() }));
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
+    setAnalysisError(null);
+
+    try {
+      const sanitized = sanitizeCode(file.content);
+      const { text: rawResponse, tokenUsage } = await analyzeCode(sanitized, file.language, activeProvider);
+      const parsed = parseAnalysisResponse(rawResponse) as Record<string, unknown>;
+
+      const result: AnalysisResult = {
+        errors: (parsed.errors as any[]) || [],
+        warnings: (parsed.warnings as any[]) || [],
+        suggestions: (parsed.suggestions as any[]) || [],
+        score: Math.max(0, Math.min(100, (parsed.score as number) || 0)),
+        fixedCode: sanitizeFixedCode((parsed.fixedCode as string) || '') || file.content,
+        changes: (parsed.changes as string[]) || [],
+        explanation: (parsed.explanation as any[]) || [],
+        concepts: (parsed.concepts as any[]) || [],
+        exercise: (parsed.exercise as any) || null,
+        tokenUsage,
+        refactoringScore: parsed.refactoringScore as any || undefined,
+        vulnerabilities: (parsed.vulnerabilities as any[]) || undefined,
+        duplications: (parsed.duplications as any[]) || undefined,
+      };
+
+      setAnalysisResult(result);
+      recordAnalysis();
+
+      try {
+        const entry: HistoryEntry = {
+          id: crypto.randomUUID(),
+          code: file.content,
+          language: file.language,
+          timestamp: Date.now(),
+          score: result.score,
+          errorCount: result.errors.length,
+          warningCount: result.warnings.length,
+          suggestionCount: result.suggestions.length,
+          result,
+        };
+        await db.addHistory(entry);
+      } catch (dbErr) {
+        console.error('Failed to save analysis history:', dbErr);
+      }
+
+      toast.success(t('analysis.analysisDone'));
+    } catch (err) {
+      let msg: string;
+      if (err instanceof ApiError) {
+        msg = err.message;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      } else {
+        msg = t('analysis.errorUnknown', { error: String(err) });
+      }
+      setAnalysisError(msg);
+      toast.error(t('analysis.analysisFailed', { error: msg }));
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [files, activeFileId, activeProvider, t]);
+
+  const clearAnalysisError = useCallback(() => setAnalysisError(null), []);
+
   const clearAll = useCallback(() => {
     setFilesState([]);
     setActiveFileId(null);
     setAnalysisResult(null);
     setIsAnalyzing(false);
+    setAnalysisError(null);
   }, []);
 
   return (
@@ -254,6 +344,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         activeFileId,
         analysisResult,
         isAnalyzing,
+        analysisError,
+        setAnalysisError,
+        clearAnalysisError,
+        runAnalysis,
         theme,
         providers,
         activeProvider,

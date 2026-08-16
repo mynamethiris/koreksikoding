@@ -5,22 +5,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
 import { FileUpload } from './FileUpload';
-import {
-  analyzeCode, parseAnalysisResponse, canAnalyze, recordAnalysis,
-  sanitizeCode, sanitizeFixedCode,
-} from '@/lib/api';
 import { setLanguage } from '@/lib/i18n';
-import { db } from '@/lib/db';
-import type { HistoryEntry } from '@/types';
-import toast from 'react-hot-toast';
 
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, i18n } = useTranslation();
   const {
-    files, activeFileId, activeProvider,
-    setAnalysisResult, setIsAnalyzing, isAnalyzing,
+    files, activeFileId,
+    isAnalyzing,
+    runAnalysis,
     theme, toggleTheme,
   } = useApp();
   const [langFlash, setLangFlash] = useState(false);
@@ -40,68 +34,9 @@ export function Header() {
     langFlashTimerRef.current = setTimeout(() => setLangFlash(false), 1500);
   }, [i18n.language]);
 
-  const handleAnalyze = useCallback(async () => {
-    if (!activeFile || !activeFile.content.trim()) {
-      toast.error(t('analysis.noCode'));
-      return;
-    }
-    if (!activeProvider.apiKey) {
-      toast.error(t('analysis.noApiKey'));
-      return;
-    }
-    if (!canAnalyze()) {
-      toast.error(t('analysis.rateLimit'));
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setAnalysisResult(null);
-
-    try {
-      const sanitized = sanitizeCode(activeFile.content);
-      const { text: rawResponse, tokenUsage } = await analyzeCode(sanitized, activeFile.language, activeProvider);
-      const parsed = parseAnalysisResponse(rawResponse) as Record<string, unknown>;
-
-      const result = {
-        errors: (parsed.errors as any[]) || [],
-        warnings: (parsed.warnings as any[]) || [],
-        suggestions: (parsed.suggestions as any[]) || [],
-        score: Math.max(0, Math.min(100, (parsed.score as number) || 0)),
-        fixedCode: sanitizeFixedCode((parsed.fixedCode as string) || '') || activeFile.content,
-        changes: (parsed.changes as string[]) || [],
-        explanation: (parsed.explanation as any[]) || [],
-        concepts: (parsed.concepts as any[]) || [],
-        exercise: (parsed.exercise as any) || null,
-        tokenUsage,
-        refactoringScore: parsed.refactoringScore as any || undefined,
-        vulnerabilities: (parsed.vulnerabilities as any[]) || undefined,
-        duplications: (parsed.duplications as any[]) || undefined,
-      };
-
-      setAnalysisResult(result);
-      recordAnalysis();
-
-      const entry: HistoryEntry = {
-        id: crypto.randomUUID(),
-        code: activeFile.content,
-        language: activeFile.language,
-        timestamp: Date.now(),
-        score: result.score,
-        errorCount: result.errors.length,
-        warningCount: result.warnings.length,
-        suggestionCount: result.suggestions.length,
-        result,
-      };
-      await db.addHistory(entry);
-
-      toast.success(t('analysis.analysisDone'));
-    } catch (err) {
-      console.error('Analysis failed:', err);
-      toast.error(t('analysis.analysisFailed', { error: err instanceof Error ? err.message : 'Unknown error' }));
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [activeFile, activeProvider, setIsAnalyzing, setAnalysisResult]);
+  const handleAnalyze = useCallback(() => {
+    runAnalysis();
+  }, [runAnalysis]);
 
   const navItems = [
     { path: '/editor', label: t('header.editor'), icon: Zap },

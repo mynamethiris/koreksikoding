@@ -3,8 +3,9 @@ import { ArrowRightLeft, Loader2, Copy, Check, Trash2, ArrowLeftRight, Code2 } f
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { analyzeCode, getLanguageExtension, getConvertPrompt } from '@/lib/api';
+import { analyzeCode, getLanguageExtension, getConvertPrompt, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
 import { lightTheme, darkTheme } from '@/lib/editor-themes';
+import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
 import { FadeIn } from '@/components/motion';
 import CodeMirror from '@uiw/react-codemirror';
 import { editorKeymap } from '@/lib/editor-keymap';
@@ -33,6 +34,7 @@ export function ConvertPage() {
   const [sourceCode, setSourceCode] = useState('');
   const [targetLang, setTargetLang] = useState<Language>('python');
   const [isConverting, setIsConverting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ConvertResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState<'source' | 'result'>('source');
@@ -64,8 +66,14 @@ export function ConvertPage() {
       return;
     }
 
+    if (!canAnalyze()) {
+      toast.error(t('analysis.rateLimit', { remaining: getRateLimitRemaining() }));
+      return;
+    }
+
     setIsConverting(true);
     setResult(null);
+    setError(null);
 
     try {
       const prompt = getConvertPrompt(targetLang);
@@ -89,7 +97,16 @@ export function ConvertPage() {
 
       toast.success(t('analysis.analysisDone'));
     } catch (err) {
-      toast.error(t('analysis.analysisFailed', { error: err instanceof Error ? err.message : 'Unknown error' }));
+      let msg: string;
+      if (err instanceof ApiError) {
+        msg = err.message;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      } else {
+        msg = t('analysis.errorUnknown', { error: String(err) });
+      }
+      setError(msg);
+      toast.error(t('analysis.analysisFailed', { error: msg }));
     } finally {
       setIsConverting(false);
     }
@@ -105,6 +122,7 @@ export function ConvertPage() {
 
   const handleClear = useCallback(() => {
     setResult(null);
+    setError(null);
   }, []);
 
   const TAB_ORDER = ['source', 'result'] as const;
@@ -205,12 +223,10 @@ export function ConvertPage() {
                 </div>
               ) : (
                 <div className="h-full overflow-y-auto p-3 space-y-3">
-                  {isConverting && (
-                    <div className="flex flex-col items-center gap-3 py-12">
-                      <Loader2 size={24} className="animate-spin text-accent" />
-                      <p className="text-xs text-muted-foreground">{t('convert.converting')}</p>
-                    </div>
-                  )}
+              {isConverting && (
+                <AsyncLoading label={t('convert.converting')} onRefresh={handleConvert} />
+              )}
+              {error && <AsyncError error={error} onRetry={handleConvert} />}
                   {!isConverting && result?.code && (
                     <>
                       <div className="flex items-center justify-between">
@@ -245,7 +261,7 @@ export function ConvertPage() {
                       )}
                     </>
                   )}
-                  {!isConverting && !result && (
+                  {!isConverting && !result && !error && (
                     <div className="flex flex-col items-center gap-3 py-12 text-center">
                       <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground opacity-80">
                         <ArrowRightLeft size={24} />
@@ -384,18 +400,10 @@ export function ConvertPage() {
           </div>
           <div className="flex-1 min-h-0 overflow-auto">
             <AnimatePresence mode="wait">
-              {isConverting && (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center h-full gap-3"
-                >
-                  <Loader2 size={24} className="animate-spin text-accent" />
-                  <p className="text-xs text-muted-foreground">{t('convert.converting')}</p>
-                </motion.div>
-              )}
+            {isConverting && (
+              <AsyncLoading label={t('convert.converting')} onRefresh={handleConvert} />
+            )}
+            {error && <AsyncError error={error} onRetry={handleConvert} />}
 
               {!isConverting && result?.code && (
                 <motion.div
@@ -423,7 +431,7 @@ export function ConvertPage() {
                 </motion.div>
               )}
 
-              {!isConverting && !result && (
+              {!isConverting && !result && !error && (
                 <motion.div
                   key="empty"
                   initial={{ opacity: 0 }}

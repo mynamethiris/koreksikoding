@@ -15,12 +15,49 @@ import i18n from '@/lib/i18n';
 import { encryptApiKey, decryptApiKey, isEncryptionVersionUpToDate, setEncryptionVersion } from '@/lib/crypto';
 import { getAnalysisPrompt } from '@/lib/prompts';
 
+export class ApiError extends Error {
+  public status: number;
+  public provider: string;
+  constructor(message: string, status: number, provider: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.provider = provider;
+  }
+}
+
+async function parseErrorResponse(res: Response, provider: AIProvider): Promise<ApiError> {
+  const text = await res.text().catch(() => '');
+  let detail = '';
+  try {
+    const data = JSON.parse(text);
+    detail =
+      (data && (data.error?.message || data.message || data.error?.status || '')) || '';
+  } catch {
+    detail = text.slice(0, 300);
+  }
+  let message: string;
+  if (res.status === 401) {
+    message = i18n.t('analysis.error401');
+  } else if (res.status === 403) {
+    message = i18n.t('analysis.error403', { model: provider.model });
+  } else if (res.status === 404) {
+    message = i18n.t('analysis.error404', { model: provider.model });
+  } else if (res.status === 429) {
+    message = i18n.t('analysis.error429');
+  } else {
+    message = i18n.t('analysis.apiError', { status: res.status, error: detail });
+  }
+  if (detail) message += ` | ${detail}`;
+  return new ApiError(message, res.status, provider.name);
+}
+
 const DEFAULT_PROVIDERS: AIProvider[] = [
   {
     id: 'gemini',
     name: 'Gemini',
-    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-    model: 'gemini-2.5-flash',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    model: 'gemini-2.0-flash',
     apiKey: '',
     isDefault: true,
   },
@@ -228,7 +265,7 @@ export async function analyzeCode(
         generationConfig: { responseMimeType: 'application/json' },
       }),
     });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    if (!res.ok) throw await parseErrorResponse(res, provider);
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const tokenUsage = data.usageMetadata ? {
@@ -255,7 +292,7 @@ export async function analyzeCode(
       response_format: { type: 'json_object' },
     }),
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) throw await parseErrorResponse(res, provider);
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content || '';
   const tokenUsage = data.usage ? {
@@ -325,6 +362,13 @@ export function recordAnalysis(): void {
   const newStart = now - windowStart > HOUR_MS ? now : windowStart;
   const newCount = now - windowStart > HOUR_MS ? 1 : count + 1;
   saveRateLimit(newCount, newStart);
+}
+
+export function getRateLimitRemaining(): number {
+  const { count, windowStart } = loadRateLimit();
+  const now = Date.now();
+  if (now - windowStart > HOUR_MS) return ANALYSIS_LIMIT;
+  return Math.max(0, ANALYSIS_LIMIT - count);
 }
 
 export function sanitizeCode(code: string): string {

@@ -4,7 +4,7 @@ import { X, ArrowRight, Loader2, Copy, Check, FileCode, ArrowLeftRight, Trash2 }
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { analyzeCode, getConvertPrompt } from '@/lib/api';
+import { analyzeCode, getConvertPrompt, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import type { Language } from '@/types';
 
@@ -63,20 +63,12 @@ export function ConvertModal({ open, onClose }: ConvertModalProps) {
   const { files, activeFileId, activeProvider, setFiles, setActiveFileId } = useApp();
   const [targetLang, setTargetLang] = useState<Language>('python');
   const [isConverting, setIsConverting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ConvertResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'code' | 'diff' | 'details'>('code');
 
   const activeFile = files.find((f) => f.id === activeFileId);
-
-  useEffect(() => {
-    const check = () => {
-      // Mobile check removed - not used
-    };
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -96,6 +88,7 @@ export function ConvertModal({ open, onClose }: ConvertModalProps) {
 
   const handleClear = () => {
     setResult(null);
+    setError(null);
     setActiveTab('code');
   };
 
@@ -120,8 +113,14 @@ export function ConvertModal({ open, onClose }: ConvertModalProps) {
       return;
     }
 
+    if (!canAnalyze()) {
+      toast.error(t('analysis.rateLimit', { remaining: getRateLimitRemaining() }));
+      return;
+    }
+
     setIsConverting(true);
     setResult(null);
+    setError(null);
 
     try {
       const prompt = getConvertPrompt(targetLang);
@@ -142,7 +141,16 @@ export function ConvertModal({ open, onClose }: ConvertModalProps) {
         warnings: parsed.warnings || [],
       });
     } catch (err) {
-      toast.error(t('analysis.analysisFailed', { error: err instanceof Error ? err.message : 'Unknown error' }));
+      let msg: string;
+      if (err instanceof ApiError) {
+        msg = err.message;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      } else {
+        msg = t('analysis.errorUnknown', { error: String(err) });
+      }
+      setError(msg);
+      toast.error(t('analysis.analysisFailed', { error: msg }));
     } finally {
       setIsConverting(false);
     }
@@ -241,6 +249,18 @@ export function ConvertModal({ open, onClose }: ConvertModalProps) {
                     <ArrowLeftRight size={10} className="mx-1.5 inline" />
                     <span className="font-mono text-foreground">{TARGET_LANGUAGES.find((l) => l.id === targetLang)?.label}</span>
                   </span>
+                </div>
+              )}
+
+              {error && !result && (
+                <div className="p-3 rounded-xl border border-destructive/20 bg-destructive/5 space-y-2">
+                  <p className="text-xs text-destructive leading-relaxed break-words">{error}</p>
+                  <button
+                    onClick={handleConvert}
+                    className="flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    {t('analysis.retry')}
+                  </button>
                 </div>
               )}
 

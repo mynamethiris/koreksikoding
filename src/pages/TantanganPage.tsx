@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Lightbulb, Code2, Flame, Loader2, CheckCircle, XCircle, ArrowRight, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { analyzeCode } from '@/lib/api';
+import { analyzeCode, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
 import { db } from '@/lib/db';
+import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
 import { CodeEditor } from '@/components/CodeEditor';
 import { FadeIn } from '@/components/motion';
 import toast from 'react-hot-toast';
@@ -79,6 +80,7 @@ export function TantanganPage() {
   });
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [challenge, setChallenge] = useState<Challenge | null>(() => {
     try {
       const s = localStorage.getItem('kk_challenge_current');
@@ -116,9 +118,15 @@ export function TantanganPage() {
       return;
     }
 
+    if (!canAnalyze()) {
+      toast.error(t('analysis.rateLimit', { remaining: getRateLimitRemaining() }));
+      return;
+    }
+
     setSelectedDifficulty(difficulty);
     setIsGenerating(true);
     setChallenge(null);
+    setError(null);
     setShowHints(false);
     setShowSurrenderCard(false);
     setChallengeStarted(false);
@@ -157,7 +165,16 @@ export function TantanganPage() {
         solution: parsed.solution || '',
       });
     } catch (err) {
-      toast.error(t('analysis.analysisFailed', { error: err instanceof Error ? err.message : 'Unknown error' }));
+      let msg: string;
+      if (err instanceof ApiError) {
+        msg = err.message;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      } else {
+        msg = t('analysis.errorUnknown', { error: String(err) });
+      }
+      setError(msg);
+      toast.error(t('analysis.analysisFailed', { error: msg }));
     } finally {
       setIsGenerating(false);
     }
@@ -599,7 +616,7 @@ export function TantanganPage() {
                       </div>
                     )}
 
-                    {!challenge && !isGenerating && (
+                    {!challenge && !isGenerating && !error && (
                       <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-center">
                         <div className="mx-auto w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground opacity-80">
                           <Trophy size={28} />
@@ -641,13 +658,11 @@ export function TantanganPage() {
 
           <div className="w-1/2 min-w-0 overflow-y-auto">
             {isGenerating && (
-              <div className="flex flex-col items-center justify-center h-full gap-4 p-6">
-                <Loader2 size={32} className="animate-spin text-accent" />
-                <p className="text-sm text-muted-foreground">{t('challenge.generating')}</p>
-              </div>
+              <AsyncLoading label={t('challenge.generating')} onRefresh={() => generateChallenge(selectedDifficulty || 'easy')} />
             )}
+            {error && <AsyncError error={error} onRetry={() => generateChallenge(selectedDifficulty || 'easy')} />}
 
-            {!challenge && !isGenerating && (
+            {!challenge && !isGenerating && !error && (
               <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-center">
                 <div className="mx-auto w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground opacity-80">
                   <Trophy size={28} />

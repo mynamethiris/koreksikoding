@@ -3,7 +3,8 @@ import { Wand2, Loader2, Copy, Check, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { analyzeCode } from '@/lib/api';
+import { analyzeCode, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
+import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
 import { FadeIn } from '@/components/motion';
 import toast from 'react-hot-toast';
 
@@ -85,6 +86,7 @@ export function PromptPage() {
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const lang = i18n.language === 'en' ? 'en' : 'id';
@@ -98,8 +100,14 @@ export function PromptPage() {
       return;
     }
 
+    if (!canAnalyze()) {
+      toast.error(t('analysis.rateLimit', { remaining: getRateLimitRemaining() }));
+      return;
+    }
+
     setIsProcessing(true);
     setOutput('');
+    setError(null);
 
     try {
       const prompt = mode === 'maker'
@@ -118,7 +126,16 @@ export function PromptPage() {
       const parsed = JSON.parse(jsonMatch[0]);
       setOutput(parsed.result || '');
     } catch (err) {
-      toast.error(t('analysis.analysisFailed', { error: err instanceof Error ? err.message : 'Unknown error' }));
+      let msg: string;
+      if (err instanceof ApiError) {
+        msg = err.message;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      } else {
+        msg = t('analysis.errorUnknown', { error: String(err) });
+      }
+      setError(msg);
+      toast.error(t('analysis.analysisFailed', { error: msg }));
     } finally {
       setIsProcessing(false);
     }
@@ -300,16 +317,11 @@ export function PromptPage() {
           <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4">
             <AnimatePresence mode="wait">
               {isProcessing && (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center gap-3 py-8"
-                >
-                  <Loader2 size={24} className="animate-spin text-accent" />
-                  <p className="text-xs text-muted-foreground">{t('promptMaker.generating')}</p>
-                </motion.div>
+                <AsyncLoading label={t('promptMaker.generating')} onRefresh={handleGenerate} />
+              )}
+
+              {error && (
+                <AsyncError error={error} onRetry={handleGenerate} />
               )}
 
               {!isProcessing && output && (
@@ -327,7 +339,7 @@ export function PromptPage() {
                 </motion.div>
               )}
 
-              {!isProcessing && !output && (
+              {!isProcessing && !output && !error && (
                 <motion.div
                   key="empty"
                   initial={{ opacity: 0 }}

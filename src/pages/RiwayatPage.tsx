@@ -47,27 +47,43 @@ export function RiwayatPage() {
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
-    const [all, allChallenges] = await Promise.all([
-      db.getAllHistory(),
-      db.getAllChallengeHistory(),
-    ]);
-    setEntries(all.reverse());
-    setChallengeEntries(allChallenges.reverse());
-    setLoading(false);
-  }, []);
+    try {
+      const [all, allChallenges] = await Promise.all([
+        db.getAllHistory(),
+        db.getAllChallengeHistory(),
+      ]);
+      setEntries(all.reverse());
+      setChallengeEntries(allChallenges.reverse());
+    } catch (err) {
+      console.error('Failed to load history:', err);
+      toast.error(t('analysis.analysisFailed', { error: 'Failed to load history' }));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
 
   const handleDelete = async (id: string) => {
-    await db.deleteHistory(id);
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-    toast.success(t('riwayat.historyDeleted'));
+    try {
+      await db.deleteHistory(id);
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      toast.success(t('riwayat.historyDeleted'));
+    } catch (err) {
+      console.error('Failed to delete history entry:', err);
+      toast.error(t('analysis.analysisFailed', { error: 'Failed to delete entry' }));
+    }
   };
 
   const handleClearAll = async () => {
-    await db.clearHistory();
-    setEntries([]);
-    toast.success(t('riwayat.allHistoryDeleted'));
+    try {
+      await db.clearHistory();
+      setEntries([]);
+      toast.success(t('riwayat.allHistoryDeleted'));
+    } catch (err) {
+      console.error('Failed to clear history:', err);
+      toast.error(t('analysis.analysisFailed', { error: 'Failed to clear history' }));
+    }
   };
 
   const handleRestore = (entry: HistoryEntry) => {
@@ -282,15 +298,25 @@ export function RiwayatPage() {
   };
 
   const handleDeleteChallenge = async (id: string) => {
-    await db.deleteChallengeHistory(id);
-    setChallengeEntries((prev) => prev.filter((e) => e.id !== id));
-    toast.success(t('riwayat.historyDeleted'));
+    try {
+      await db.deleteChallengeHistory(id);
+      setChallengeEntries((prev) => prev.filter((e) => e.id !== id));
+      toast.success(t('riwayat.historyDeleted'));
+    } catch (err) {
+      console.error('Failed to delete challenge entry:', err);
+      toast.error(t('analysis.analysisFailed', { error: 'Failed to delete entry' }));
+    }
   };
 
   const handleClearAllChallenges = async () => {
-    await db.clearChallengeHistory();
-    setChallengeEntries([]);
-    toast.success(t('riwayat.allHistoryDeleted'));
+    try {
+      await db.clearChallengeHistory();
+      setChallengeEntries([]);
+      toast.success(t('riwayat.allHistoryDeleted'));
+    } catch (err) {
+      console.error('Failed to clear challenge history:', err);
+      toast.error(t('analysis.analysisFailed', { error: 'Failed to clear history' }));
+    }
   };
 
   const filteredAnalysis = entries.filter((e) => e.code.toLowerCase().includes(search.toLowerCase()));
