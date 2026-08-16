@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { EditorFile, AnalysisResult, Theme, AIProvider, HistoryEntry } from '@/types';
+import type { EditorFile, AnalysisResult, Theme, AIProvider, HistoryEntry, Language } from '@/types';
 import { analyzeCode, parseAnalysisResponse, canAnalyze, recordAnalysis, sanitizeCode, sanitizeFixedCode, getRateLimitRemaining, ApiError } from '@/lib/api';
 import { decryptApiKey } from '@/lib/crypto';
 import { db } from '@/lib/db';
@@ -25,6 +25,7 @@ interface AppContextType extends AppState {
   removeFile: (id: string) => void;
   updateFileContent: (id: string, content: string) => void;
   updateFileName: (id: string, name: string) => void;
+  updateFileLanguage: (id: string, language: Language) => void;
   setActiveFileId: (id: string) => void;
   setAnalysisResult: (result: AnalysisResult | null) => void;
   setIsAnalyzing: (v: boolean) => void;
@@ -100,7 +101,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (stored) {
         const parsed = JSON.parse(stored);
         const defaults = [
-          { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true },
+          { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', model: 'gemini-3.6-flash', apiKey: '', isDefault: true },
           { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen3-32b', apiKey: '', isDefault: true },
         ];
         return defaults.map((dp) => {
@@ -110,7 +111,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     } catch { }
     return [
-      { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true },
+      { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', model: 'gemini-3.6-flash', apiKey: '', isDefault: true },
       { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen3-32b', apiKey: '', isDefault: true },
     ];
   });
@@ -119,7 +120,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const activeId = localStorage.getItem('kk_active_provider') || 'gemini';
       const stored = localStorage.getItem('kk_providers');
       const defaults: AIProvider[] = [
-        { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true },
+        { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', model: 'gemini-3.6-flash', apiKey: '', isDefault: true },
         { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen3-32b', apiKey: '', isDefault: true },
       ];
       if (stored) {
@@ -132,7 +133,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return defaults[0];
     } catch {
-      return { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true };
+      return { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', model: 'gemini-3.6-flash', apiKey: '', isDefault: true };
     }
   });
   const [activeResultTab, setActiveResultTab] = useState(() => {
@@ -225,6 +226,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateFileName = useCallback((id: string, name: string) => {
     setFilesState((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)));
+  }, []);
+
+  const updateFileLanguage = useCallback((id: string, language: Language) => {
+    setFilesState((prev) => prev.map((f) => (f.id === id ? { ...f, language } : f)));
   }, []);
 
   const toggleTheme = useCallback(() => {
@@ -358,6 +363,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         removeFile,
         updateFileContent,
         updateFileName,
+        updateFileLanguage,
         setActiveFileId,
         setAnalysisResult,
         setIsAnalyzing,

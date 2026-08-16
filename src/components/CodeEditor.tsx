@@ -1,9 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Plus, X, PencilLine, Eraser } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { getLanguageExtension, detectLanguage } from '@/lib/api';
+import { getLanguageExtension, detectLanguage, detectLanguageFromContent } from '@/lib/api';
 import { EmptyState } from '@/components/EmptyState';
 import type { EditorFile, Language } from '@/types';
 import CodeMirror from '@uiw/react-codemirror';
@@ -51,10 +51,20 @@ function TabRenameInput({ name, onRename, onCancel }: { name: string; onRename: 
 
 export function CodeEditor({ challengeMode = false }: { challengeMode?: boolean }) {
   const { t } = useTranslation();
-  const { files, activeFileId, updateFileContent, addFile, removeFile, setActiveFileId, updateFileName, theme, analysisResult, clearAll } = useApp();
+  const { files, activeFileId, updateFileContent, addFile, removeFile, setActiveFileId, updateFileName, updateFileLanguage, theme, analysisResult, clearAll } = useApp();
   const [renamingId, setRenamingId] = useState<string | null>(null);
 
   const activeFile = files.find((f) => f.id === activeFileId);
+
+  useEffect(() => {
+    if (!activeFile) return;
+    if (!/^file-\d+$/.test(activeFile.name)) return;
+    if (activeFile.content.length < 30) return;
+    const detected = detectLanguageFromContent(activeFile.content);
+    if (detected !== activeFile.language) {
+      updateFileLanguage(activeFile.id, detected);
+    }
+  }, [activeFile?.content, activeFile?.name, activeFile?.language, activeFile?.id, updateFileLanguage]);
 
   const handleAddTab = useCallback(() => {
     const id = crypto.randomUUID();

@@ -56,8 +56,8 @@ const DEFAULT_PROVIDERS: AIProvider[] = [
   {
     id: 'gemini',
     name: 'Gemini',
-    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-    model: 'gemini-2.0-flash',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
+    model: 'gemini-3.6-flash',
     apiKey: '',
     isDefault: true,
   },
@@ -153,6 +153,27 @@ export function detectLanguage(filename: string): Language {
   return map[ext] || ext || 'javascript';
 }
 
+export function detectLanguageFromContent(code: string): Language {
+  const s = code.trim();
+  if (s.length < 30) return 'javascript';
+
+  try { JSON.parse(s); return 'json'; } catch {}
+
+  if (s.startsWith('<?xml') || (s.startsWith('<') && s.includes('</'))) return 'xml';
+  if (s.startsWith('---') || /^[\w-]+:\s/m.test(s)) return 'yaml';
+  if (/^<!DOCTYPE|^<html|^<head|^<body|^<div|^<section|^<main/m.test(s)) return 'html';
+  if (/^@(media|import|keyframes|font-face)|^\.[\w-]+\s*\{|^[\w-]+\s*\{/m.test(s)) return 'css';
+  if (/^SELECT\s|^INSERT\s|^CREATE\s|^ALTER\s|^DROP\s|^UPDATE\s|^DELETE\s/m.test(s)) return 'sql';
+  if (/^#include\s|^int\s+main|^void\s|^printf\(|^cout\s|^cin\s/m.test(s)) return 'c';
+  if (/^package\s|^func\s|^import\s*\(/m.test(s)) return 'go';
+  if (/^def\s|^import\s|^self\.|^elif\s|^class\s+\w+|^print\(|^if\s+__name__/m.test(s)) return 'python';
+  if (/^public\s+class|^private\s|^System\.out/m.test(s)) return 'java';
+  if (/^<\?php|^\$\w+/m.test(s)) return 'php';
+  if (/:\s*string|:\s*number|interface\s|^type\s+\w+|as\s+\w+/m.test(s)) return 'typescript';
+  if (/function\s|^const\s|^let\s|^var\s|=>|console\.log|export\s+default|export\s+(const|function|class)/m.test(s)) return 'javascript';
+  return 'javascript';
+}
+
 export function getLanguageExtension(lang: Language): Extension {
   const map: Record<Language, () => Extension> = {
     python: () => [
@@ -224,6 +245,31 @@ export async function testConnection(provider: AIProvider): Promise<{ success: b
     return { success: true, message: 'Koneksi berhasil! API Key valid.' };
   } catch (err) {
     return { success: false, message: `Gagal menghubungi server: ${err instanceof Error ? err.message : 'Kesalahan tidak diketahui'}` };
+  }
+}
+
+export async function fetchAvailableModels(provider: AIProvider): Promise<string[]> {
+  try {
+    if (provider.id === 'gemini') {
+      const base = provider.endpoint.replace(/\/models\/[^/]+:generateContent$/, '');
+      const res = await fetch(`${base}/models?key=${provider.apiKey}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const models: string[] = (data.models || [])
+        .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+        .map((m: any) => m.name?.replace('models/', '') || '')
+        .filter(Boolean);
+      return models.length > 0 ? models : [];
+    }
+
+    const res = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { Authorization: `Bearer ${provider.apiKey}` },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.data || []).map((m: any) => m.id).filter(Boolean);
+  } catch {
+    return [];
   }
 }
 

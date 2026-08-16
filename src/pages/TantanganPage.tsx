@@ -243,18 +243,6 @@ export function TantanganPage() {
     toast.success(i18n.language === 'en' ? 'Challenge started! Fix the code.' : 'Tantangan dimulai! Perbaiki kode.');
   };
 
-  const resetChallenge = () => {
-    if (!challenge) return;
-    const newCompleted = new Set(completedChallenges);
-    newCompleted.delete(challenge.id);
-    setCompletedChallenges(newCompleted);
-    localStorage.setItem('kk_completed_challenges', JSON.stringify([...newCompleted]));
-    setCheckResult(null);
-    setShowSurrenderCard(false);
-    setChallengeStarted(false);
-    toast.success(i18n.language === 'en' ? 'Challenge reset. Try again!' : 'Tantangan direset. Coba lagi!');
-  };
-
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
     check();
@@ -386,18 +374,6 @@ export function TantanganPage() {
               ? 'Your solution didn\'t match. Try again, or click Give Up to see the solution.'
               : 'Solusi Anda belum sesuai. Coba lagi, atau klik Menyerah untuk melihat solusi.'}
           </motion.div>
-        )}
-
-        {(checkResult === 'pass' || completedChallenges.has(challenge!.id)) && (
-          <motion.button
-            onClick={resetChallenge}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
-          >
-            <RotateCcw size={12} />
-            {t('challenge.resetSurrender')}
-          </motion.button>
         )}
 
         <AnimatePresence>

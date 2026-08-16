@@ -3,26 +3,12 @@ import { Settings, Eye, EyeOff, Check, Trash2, Users, GraduationCap, Crown, User
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { saveProviders, testConnection } from '@/lib/api';
+import { saveProviders, testConnection, fetchAvailableModels } from '@/lib/api';
 import { db } from '@/lib/db';
 import { FadeIn } from '@/components/motion';
 import { ConfirmModal } from '@/components/Modal';
 import type { AIProvider, TeamMember } from '@/types';
 import toast from 'react-hot-toast';
-
-const GEMINI_MODELS = [
-  { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-  { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  { id: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  { id: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' },
-  { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite' },
-];
-
-const GROQ_MODELS = [
-  { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B Versatile' },
-  { id: 'qwen3-32b', label: 'Qwen3 32B' },
-  { id: 'gpt-oss-120b', label: 'GPT-OSS 120B' },
-];
 
 function buildEndpoint(providerName: string, model: string): string {
   if (providerName === 'Gemini') {
@@ -140,6 +126,15 @@ export function SettingsPage() {
       const result = await testConnection(provider);
       if (result.success) {
         toast.success(result.message);
+        const models = await fetchAvailableModels(provider);
+        if (models.length > 0) {
+          const updated = providers.map((p) =>
+            p.id === provider.id ? { ...p, availableModels: models } : p,
+          );
+          setProviders(updated);
+          saveProviders(updated);
+          toast.success(t('settings.modelsFetched', { count: models.length }));
+        }
       } else {
         toast.error(result.message);
       }
@@ -241,17 +236,31 @@ export function SettingsPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setExpandedModels((prev) => ({ ...prev, [p.id]: !prev[p.id] }));
+                        if (p.availableModels && p.availableModels.length > 0) {
+                          setExpandedModels((prev) => ({ ...prev, [p.id]: !prev[p.id] }));
+                        }
                       }}
-                      className="w-full flex items-center justify-between px-3 py-1.5 text-xs rounded-lg border border-border bg-background hover:bg-muted transition-colors"
+                      disabled={!p.availableModels || p.availableModels.length === 0}
+                      className={`w-full flex items-center justify-between px-3 py-1.5 text-xs rounded-lg border border-border bg-background transition-colors ${
+                        p.availableModels && p.availableModels.length > 0
+                          ? 'hover:bg-muted cursor-pointer'
+                          : 'opacity-60 cursor-default'
+                      }`}
                     >
                       <span className="text-muted-foreground">Model: <span className="text-foreground font-medium">{p.model}</span></span>
-                      <motion.div animate={{ rotate: expandedModels[p.id] ? 180 : 0 }} transition={{ duration: 0.15 }}>
-                        <ChevronDown size={12} className="text-muted-foreground" />
-                      </motion.div>
+                      {p.availableModels && p.availableModels.length > 0 && (
+                        <motion.div animate={{ rotate: expandedModels[p.id] ? 180 : 0 }} transition={{ duration: 0.15 }}>
+                          <ChevronDown size={12} className="text-muted-foreground" />
+                        </motion.div>
+                      )}
                     </button>
+                    {(!p.availableModels || p.availableModels.length === 0) && (
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        {t('settings.setModelHint')}
+                      </p>
+                    )}
                     <AnimatePresence>
-                      {expandedModels[p.id] && (
+                      {expandedModels[p.id] && p.availableModels && p.availableModels.length > 0 && (
                         <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
@@ -260,21 +269,21 @@ export function SettingsPage() {
                           className="overflow-hidden"
                         >
                           <div className="mt-1 p-1 rounded-lg border border-border bg-background space-y-0.5">
-                            {(p.id === 'gemini' ? GEMINI_MODELS : GROQ_MODELS).map((m) => (
+                            {p.availableModels.map((modelId) => (
                               <button
-                                key={m.id}
+                                key={modelId}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleModelChange(p.id, m.id);
+                                  handleModelChange(p.id, modelId);
                                   setExpandedModels((prev) => ({ ...prev, [p.id]: false }));
                                 }}
                                 className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-colors ${
-                                  p.model === m.id
+                                  p.model === modelId
                                     ? 'bg-accent/10 text-accent font-medium'
                                     : 'text-muted-foreground hover:bg-muted'
                                 }`}
                               >
-                                {m.label}
+                                {modelId}
                               </button>
                             ))}
                           </div>

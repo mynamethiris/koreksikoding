@@ -568,18 +568,7 @@ export function RiwayatPage() {
                             {i18n.language === 'en' ? 'Resume' : 'Lanjutkan'}
                           </motion.button>
                         )}
-                        {entry.completed && (
-                          <motion.button
-                            onClick={() => handleResumeChallenge(entry)}
-                            className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-medium rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors opacity-0 group-hover:opacity-100"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <RotateCcw size={10} />
-                            {i18n.language === 'en' ? 'Reset' : 'Reset'}
-                          </motion.button>
-                        )}
-                        <motion.button
+                      <motion.button
                           onClick={() => setDeleteChallengeTarget(entry.id)}
                           className="p-1.5 hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                         >

@@ -122,6 +122,7 @@ export interface AIProvider {
   model: string;
   apiKey: string;
   isDefault?: boolean;
+  availableModels?: string[];
 }
 
 export interface HistoryEntry {

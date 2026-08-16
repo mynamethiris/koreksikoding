@@ -6,7 +6,7 @@ import { useApp } from '@/store/AppContext';
 import { EmptyState } from '@/components/EmptyState';
 import { VulnerabilityTab } from '@/components/VulnerabilityTab';
 import { DuplicationTab } from '@/components/DuplicationTab';
-import { downloadFile, exportToMarkdown, getCommunityLinks, getFileExtensionForLanguage } from '@/lib/api';
+import { downloadFile, getCommunityLinks, getFileExtensionForLanguage } from '@/lib/api';
 import { AsyncError } from '@/components/AsyncStatus';
 import { useHasExceeded } from '@/lib/useSlowTimer';
 import toast from 'react-hot-toast';
@@ -274,17 +274,67 @@ export function AnalysisPanel() {
 
   const handleExportMarkdown = () => {
     if (!result) return;
-    const lineLabel = t('analysis.line');
-    const md = exportToMarkdown(t('analysis.markdownExportTitle'), {
-      [t('analysis.markdownScore')]: `${result.score}/100`,
-      [t('analysis.markdownErrors')]: `${result.errors.length}`,
-      [t('analysis.markdownWarnings')]: `${result.warnings.length}`,
-      [t('analysis.markdownSuggestions')]: `${result.suggestions.length}`,
-      [t('analysis.markdownErrorDetail')]: result.errors.map((e) => `${lineLabel} ${e.line}: ${e.message}. ${e.explanation}`).join('\n'),
-      [t('analysis.markdownWarningDetail')]: result.warnings.map((w) => `${lineLabel} ${w.line}: ${w.message}. ${w.explanation}`).join('\n'),
-      [t('analysis.markdownSuggestionDetail')]: result.suggestions.map((s) => `${lineLabel} ${s.line}: ${s.message}. ${s.explanation}`).join('\n'),
-      [t('analysis.markdownFixedCode')]: result.fixedCode,
-    });
+    const lines: string[] = [];
+    lines.push(`# ${t('analysis.markdownExportTitle')}`);
+    lines.push('');
+    lines.push('## Summary');
+    lines.push('');
+    lines.push('| Metric | Value |');
+    lines.push('|--------|-------|');
+    lines.push(`| ${t('analysis.stat.score')} | ${result.score}/100 |`);
+    lines.push(`| ${t('analysis.stat.error')} | ${result.errors.length} |`);
+    lines.push(`| ${t('analysis.stat.warning')} | ${result.warnings.length} |`);
+    lines.push(`| ${t('analysis.stat.suggestion')} | ${result.suggestions.length} |`);
+    lines.push('');
+
+    if (result.errors.length > 0) {
+      lines.push(`## ${t('analysis.errors')} (${result.errors.length})`);
+      lines.push('');
+      for (const e of result.errors) {
+        lines.push(`- **${t('analysis.line')} ${e.line}**: ${e.message}`);
+        lines.push(`  - ${e.explanation}`);
+        if (e.category) lines.push(`  - Category: \`${e.category}\``);
+        lines.push('');
+      }
+    }
+    if (result.warnings.length > 0) {
+      lines.push(`## ${t('analysis.warnings')} (${result.warnings.length})`);
+      lines.push('');
+      for (const w of result.warnings) {
+        lines.push(`- **${t('analysis.line')} ${w.line}**: ${w.message}`);
+        lines.push(`  - ${w.explanation}`);
+        if (w.category) lines.push(`  - Category: \`${w.category}\``);
+        lines.push('');
+      }
+    }
+    if (result.suggestions.length > 0) {
+      lines.push(`## ${t('analysis.suggestions')} (${result.suggestions.length})`);
+      lines.push('');
+      for (const s of result.suggestions) {
+        lines.push(`- **${t('analysis.line')} ${s.line}**: ${s.message}`);
+        lines.push(`  - ${s.explanation}`);
+        if (s.category) lines.push(`  - Category: \`${s.category}\``);
+        lines.push('');
+      }
+    }
+    if (result.fixedCode) {
+      const ext = getFileExtensionForLanguage(activeFile?.language || '');
+      lines.push(`## ${t('analysis.fixedCode')}`);
+      lines.push('');
+      lines.push(`\`\`\`${ext || ''}`);
+      lines.push(result.fixedCode);
+      lines.push('```');
+      lines.push('');
+    }
+    if (result.changes.length > 0) {
+      lines.push('## Changes Made');
+      lines.push('');
+      for (const c of result.changes) {
+        lines.push(`- ${c}`);
+      }
+      lines.push('');
+    }
+    const md = lines.join('\n');
     downloadFile(md, 'hasil-analisis.md', 'text/markdown');
     toast.success(t('analysis.markdownExport'));
   };
