@@ -228,7 +228,12 @@
     "pasted": "API key pasted successfully",
     "pasteKey": "Paste API Key",
     "recommendedModels": "Recommended",
-    "getApiKey": "Get API Key"
+    "getApiKey": "Get API Key",
+    "testing": "Testing...",
+    "validated": "API Key valid - models detected",
+    "notValidated": "API Key not valid - enter a correct key",
+    "validationRequired": "API Key not validated. Enter a key and wait for validation before use.",
+    "keyRequired": "Enter an API Key first"
   },
   "beranda": {
     "badge": "AI-Powered Code Analysis",

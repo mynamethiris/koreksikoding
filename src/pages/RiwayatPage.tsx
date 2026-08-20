@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Trash2, Download, Upload, Calendar, AlertTriangle, AlertCircle, Info, RotateCcw, Trophy, Clock, Play, Eye, Copy, Check } from 'lucide-react';
+import { Search, Trash2, Download, Upload, Calendar, AlertTriangle, AlertCircle, Info, RotateCcw, Trophy, Clock, Play, Eye, Copy, Check, RotateCw, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { db } from '@/lib/db';
@@ -691,11 +691,14 @@ export function RiwayatPage() {
               style={{ height: '400px', fontSize: '13px' }}
             />
           </div>
-          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+<div className="flex justify-end gap-2 pt-3 border-t border-border">
             <button
               onClick={() => setViewTarget(null)}
-              className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-muted transition-colors text-muted-foreground"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.75 text-xs font-medium rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
+              <span className="relative">
+                <X size={12} className="shrink-0" />
+              </span>
               {t('modal.cancel')}
             </button>
             {viewTarget && (
@@ -704,8 +707,9 @@ export function RiwayatPage() {
                   handleRestore(viewTarget);
                   setViewTarget(null);
                 }}
-                className="px-3 py-1.5 text-xs rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.75 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
+                <RotateCw size={12} className="shrink-0" />
                 {t('riwayat.restoreCode')}
               </button>
             )}

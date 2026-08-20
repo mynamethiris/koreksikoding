@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, Component, type ReactNode } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
@@ -12,7 +12,28 @@ import { editorKeymap } from '@/lib/editor-keymap';
 import { lightTheme, darkTheme } from '@/lib/editor-themes';
 import type { EditorView } from '@codemirror/view';
 
-export function CodeEditor({ hideToolbar }: { hideToolbar?: boolean }) {
+class EditorErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="flex flex-col items-center justify-center h-full gap-2 p-4 text-center">
+          <p className="text-sm text-destructive">Editor crashed</p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-muted text-muted-foreground transition-colors"
+          >
+            Reload editor
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export function CodeEditor({ hideToolbar, enableMarkers = true }: { hideToolbar?: boolean; enableMarkers?: boolean }) {
   const { t } = useTranslation();
   const app = useApp();
   const scoped = useContext(ScopedEditorContext);
@@ -37,7 +58,7 @@ export function CodeEditor({ hideToolbar }: { hideToolbar?: boolean }) {
   }, [activeFile?.content, activeFile?.name, activeFile?.language, activeFile?.id, activeFile?.manualLanguage, updateFileLanguage]);
 
   useEffect(() => {
-    if (!editorView) return;
+    if (!editorView || !enableMarkers) return;
     if (analysisResult) {
       const errors = resultToErrors(analysisResult);
       editorView.dispatch({
@@ -46,15 +67,22 @@ export function CodeEditor({ hideToolbar }: { hideToolbar?: boolean }) {
     } else {
       editorView.dispatch({ effects: clearLineMarkers.of(null) });
     }
-  }, [editorView, analysisResult]);
+  }, [editorView, analysisResult, enableMarkers]);
 
   useEffect(() => {
+    if (!enableMarkers) return;
     const handler = (e: CustomEvent<{ line: number }>) => {
       if (editorView) scrollToLine(editorView, e.detail.line);
     };
     window.addEventListener('korek:scrollToLine', handler as EventListener);
     return () => window.removeEventListener('korek:scrollToLine', handler as EventListener);
-  }, [editorView]);
+  }, [editorView, enableMarkers]);
+
+  const extensions = activeFile
+    ? enableMarkers
+      ? [getLanguageExtension(activeFile.language), editorKeymap, ...lineMarkerExtension()]
+      : [getLanguageExtension(activeFile.language), editorKeymap]
+    : [];
 
   return (
     <div className="flex flex-col h-full">
@@ -120,30 +148,28 @@ export function CodeEditor({ hideToolbar }: { hideToolbar?: boolean }) {
 
       <div className="flex-1 min-h-0 overflow-auto">
         {activeFile ? (
-          <CodeMirror
-            key={activeFile.id}
-            value={activeFile.content}
-            onChange={(value) => updateFileContent(activeFile.id, value)}
-            extensions={[
-              getLanguageExtension(activeFile.language),
-              editorKeymap,
-              ...lineMarkerExtension(),
-            ]}
-            onCreateEditor={(view) => setEditorView(view)}
-            theme={theme === 'dark' ? darkTheme : lightTheme}
-            basicSetup={{
-              lineNumbers: true,
-              highlightActiveLineGutter: true,
-              highlightActiveLine: true,
-              bracketMatching: true,
-              foldGutter: true,
-              indentOnInput: true,
-              tabSize: 2,
-              autocompletion: true,
-              highlightSelectionMatches: true,
-            }}
-            style={{ height: '100%', fontSize: '14px' }}
-          />
+          <EditorErrorBoundary>
+            <CodeMirror
+              key={activeFile.id}
+              value={activeFile.content}
+              onChange={(value) => updateFileContent(activeFile.id, value)}
+              extensions={extensions}
+              onCreateEditor={(view) => setEditorView(view)}
+              theme={theme === 'dark' ? darkTheme : lightTheme}
+              basicSetup={{
+                lineNumbers: true,
+                highlightActiveLineGutter: false,
+                highlightActiveLine: false,
+                bracketMatching: true,
+                foldGutter: true,
+                indentOnInput: true,
+                tabSize: 2,
+                autocompletion: true,
+                highlightSelectionMatches: false,
+              }}
+              style={{ height: '100%', fontSize: '14px' }}
+            />
+          </EditorErrorBoundary>
         ) : (
           <EmptyState
             icon={<span className="text-xl font-mono font-bold">{'</>'}</span>}

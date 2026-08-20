@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Settings, Eye, EyeOff, Check, Trash2, Users, GraduationCap, Crown, User, Zap, ChevronDown, ExternalLink } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Settings, Eye, EyeOff, Check, Trash2, Users, GraduationCap, Crown, User, Zap, ChevronDown, ExternalLink, Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
@@ -66,6 +66,15 @@ export function SettingsPage() {
   const [clearDataConfirm, setClearDataConfirm] = useState(false);
   const [flashId, setFlashId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [validatedIds, setValidatedIds] = useState<Set<string>>(() => {
+    const valid = new Set<string>();
+    for (const p of providers) {
+      if (p.apiKey && p.availableModels && p.availableModels.length > 0) {
+        valid.add(p.id);
+      }
+    }
+    return valid;
+  });
   const [expandedModels, setExpandedModels] = useState<Record<string, boolean>>({});
   const [customForm, setCustomForm] = useState({
     name: '',
@@ -93,7 +102,54 @@ export function SettingsPage() {
     }
   }, [highlightProvider, providers, triggerFlash]);
 
+  useEffect(() => {
+    const mountedRef = { current: false };
+    providers.forEach((p) => {
+      if (p.apiKey && p.apiKey.length >= 10 && (!p.availableModels || p.availableModels.length === 0)) {
+        autoValidate(p.id, p.apiKey);
+      }
+    });
+    return () => { mountedRef.current = true; };
+  }, []);
+
   const toggleKey = (id: string) => setShowKeys((p) => ({ ...p, [id]: !p[id] }));
+
+  const autoValidate = useCallback(async (providerId: string, key: string) => {
+    if (!key || key.length < 10) {
+      setValidatedIds((prev) => { const next = new Set(prev); next.delete(providerId); return next; });
+      return;
+    }
+    setTestingId(providerId);
+    try {
+      const current = providersRef.current.find((p) => p.id === providerId);
+      if (!current) { setTestingId(null); return; }
+      const tempProvider = { ...current, apiKey: key };
+      const result = await testConnection(tempProvider);
+      if (result.success) {
+        const models = await fetchAvailableModels(tempProvider);
+        setValidatedIds((prev) => new Set(prev).add(providerId));
+        const latest = providersRef.current;
+        const updated = latest.map((p) =>
+          p.id === providerId ? { ...p, apiKey: key, availableModels: models.length > 0 ? models : undefined } : p,
+        );
+        setProviders(updated);
+        saveProviders(updated);
+        if (models.length > 0) {
+          toast.success(t('settings.modelsFetched', { count: models.length }));
+        }
+      } else {
+        setValidatedIds((prev) => { const next = new Set(prev); next.delete(providerId); return next; });
+      }
+    } catch {
+      setValidatedIds((prev) => { const next = new Set(prev); next.delete(providerId); return next; });
+    } finally {
+      setTestingId(null);
+    }
+  }, [setProviders, t]);
+
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const providersRef = useRef(providers);
+  providersRef.current = providers;
 
   const updateApiKey = (providerId: string, key: string) => {
     const updated = providers.map((p) =>
@@ -111,6 +167,12 @@ export function SettingsPage() {
     } else if (providerId === activeProvider.id) {
       setActiveProvider({ ...activeProvider, apiKey: key });
     }
+    if (debounceTimers.current[providerId]) {
+      clearTimeout(debounceTimers.current[providerId]);
+    }
+    debounceTimers.current[providerId] = setTimeout(() => {
+      autoValidate(providerId, key);
+    }, 800);
   };
 
   const handleSelectProvider = (provider: AIProvider) => {
@@ -353,6 +415,21 @@ export function SettingsPage() {
                   >
                     {showKeys[p.id] ? <EyeOff size={14} /> : <Eye size={14} />}
                   </motion.button>
+                  <div className="relative">
+                    {testingId === p.id ? (
+                      <div className="p-2" title={t('settings.testing')}>
+                        <Loader2 size={14} className="animate-spin text-accent" />
+                      </div>
+                    ) : validatedIds.has(p.id) ? (
+                      <div className="p-2 text-success" title={t('settings.validated')}>
+                        <Check size={14} />
+                      </div>
+                    ) : p.apiKey && !validatedIds.has(p.id) ? (
+                      <div className="p-2 text-destructive/60" title={t('settings.notValidated')}>
+                        <X size={14} />
+                      </div>
+                    ) : null}
+                  </div>
                   <motion.button
                     onClick={(e) => { e.stopPropagation(); handleTestConnection(p); }}
                     disabled={testingId === p.id || !p.apiKey}

@@ -4,7 +4,7 @@ import { X, ArrowRight, Loader2, Copy, Check, FileCode, ArrowLeftRight, Trash2 }
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { analyzeCode, getConvertPrompt, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
+import { analyzeCode, getConvertPrompt, canAnalyze, getRateLimitRemaining, ApiError, extractJSON } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { showApiKeyNotification } from '@/components/ApiKeyNotification';
 import type { Language } from '@/types';
@@ -127,14 +127,7 @@ export function ConvertModal({ open, onClose }: ConvertModalProps) {
       const prompt = getConvertPrompt(targetLang);
       const { text } = await analyzeCode(activeFile.content, activeFile.language, activeProvider, prompt);
 
-      let cleaned = text.trim();
-      if (cleaned.startsWith('```')) {
-        cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-      }
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('Invalid JSON response');
-
-      const parsed = JSON.parse(jsonMatch[0]);
+      const parsed = extractJSON(text) as Record<string, any>;
       setResult({
         code: parsed.convertedCode || '',
         explanation: parsed.explanation || '',

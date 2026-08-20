@@ -70,16 +70,20 @@ function ErrorItem({ item, type, index }: { item: { line: number; message: strin
       <button
         onClick={() => {
           setExpanded(!expanded);
-          window.dispatchEvent(new CustomEvent('korek:scrollToLine', { detail: { line: item.line } }));
+          if (item.line > 0) {
+            window.dispatchEvent(new CustomEvent('korek:scrollToLine', { detail: { line: item.line } }));
+          }
         }}
         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted transition-colors"
       >
         <div className={`p-1 rounded-md ${bg}`}>
           <Icon size={11} className={text} />
         </div>
-        <span className="text-[9px] font-mono text-muted-foreground shrink-0">
-          {t('analysis.line')} {item.line}
-        </span>
+        {item.line > 0 && (
+          <span className="text-[9px] font-mono text-muted-foreground shrink-0">
+            {t('analysis.line')} {item.line}
+          </span>
+        )}
         <span className="text-xs flex-1 text-foreground truncate">{item.message}</span>
         <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-muted-foreground">
           <ChevronDown size={14} />
@@ -207,9 +211,9 @@ function PenjelasanTab({ result }: { result: NonNullable<ReturnType<typeof useAp
               <pre className="mt-1 p-3 rounded-lg bg-success/10 text-xs font-mono text-foreground overflow-auto">{exp.correctCode}</pre>
             </div>
           </div>
-          <div className="p-3 rounded-lg bg-info/10 border border-info/20">
-            <span className="text-[10px] uppercase font-semibold text-info tracking-wider">{t('analysis.tip')}</span>
-            <p className="text-xs text-muted-foreground mt-0.5">{exp.tip}</p>
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-info/10 border border-info/20">
+            <span className="text-[10px] uppercase font-semibold text-info tracking-wider shrink-0 mt-0.5">{t('analysis.tip')}</span>
+            <p className="text-xs text-muted-foreground">{exp.tip}</p>
           </div>
         </motion.div>
       ))}

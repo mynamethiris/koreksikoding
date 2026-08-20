@@ -105,7 +105,7 @@ export function EditorPage() {
               exit={{ opacity: 0, x: slideDir * -40 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
-              {mobileTab === 'editor' && <CodeEditor />}
+              {mobileTab === 'editor' && <CodeEditor enableMarkers={false} />}
               {mobileTab === 'analysis' && <AnalysisPanel />}
             </motion.div>
           </AnimatePresence>
@@ -119,7 +119,7 @@ export function EditorPage() {
       <div className="flex-1 min-h-0 flex">
         <div className="w-1/2 flex flex-col border-r border-border min-w-0">
           <div className="flex-1 min-h-0">
-            <CodeEditor />
+            <CodeEditor enableMarkers={false} />
           </div>
         </div>
 

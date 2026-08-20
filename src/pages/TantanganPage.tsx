@@ -4,7 +4,7 @@ import { Trophy, Lightbulb, Code2, Flame, Loader2, CheckCircle, XCircle, ArrowRi
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
 import { useScopedEditor } from '@/store/ScopedEditorContext';
-import { analyzeCode, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
+import { analyzeCode, canAnalyze, getRateLimitRemaining, ApiError, extractJSON } from '@/lib/api';
 import { db } from '@/lib/db';
 import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
 import { CodeEditor } from '@/components/CodeEditor';
@@ -153,14 +153,7 @@ export function TantanganPage() {
         prompt,
       );
 
-      let cleaned = text.trim();
-      if (cleaned.startsWith('```')) {
-        cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-      }
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('Invalid JSON response');
-
-      const parsed = JSON.parse(jsonMatch[0]);
+      const parsed = extractJSON(text) as Record<string, any>;
       const lang =
         parsed.language && CHALLENGE_LANGUAGES.includes(parsed.language)
           ? parsed.language
@@ -624,7 +617,7 @@ export function TantanganPage() {
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               >
                 {mobileTab === 'editor' ? (
-                  <CodeEditor hideToolbar />
+                  <CodeEditor hideToolbar enableMarkers={false} />
                 ) : (
                   <div className="h-full overflow-y-auto">
                     {isGenerating && (
@@ -671,7 +664,7 @@ export function TantanganPage() {
       ) : (
         <div className="flex-1 min-h-0 flex">
           <div className="w-1/2 min-w-0 border-r border-border">
-            <CodeEditor hideToolbar />
+            <CodeEditor hideToolbar enableMarkers={false} />
           </div>
 
           <div className="w-1/2 min-w-0 overflow-y-auto">

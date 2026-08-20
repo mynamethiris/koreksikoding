@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { EditorFile, AnalysisResult, Theme, AIProvider, HistoryEntry, Language } from '@/types';
+import type { EditorFile, AnalysisResult, AnalysisError, Theme, AIProvider, HistoryEntry, Language } from '@/types';
 import { analyzeCode, parseAnalysisResponse, canAnalyze, recordAnalysis, sanitizeCode, sanitizeFixedCode, getRateLimitRemaining, ApiError } from '@/lib/api';
 import { decryptApiKey } from '@/lib/crypto';
 import { db } from '@/lib/db';
@@ -108,15 +108,31 @@ function loadAnalysisState(): AnalysisResult | null {
   return null;
 }
 
+function normalizeIssues(items: unknown): AnalysisError[] {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => {
+    if (typeof item === 'string') {
+      return { line: 0, message: item, explanation: '', category: '', severity: 'suggestion' as const };
+    }
+    return {
+      line: typeof item.line === 'number' ? item.line : 0,
+      message: typeof item.message === 'string' ? item.message : String(item.message ?? item.title ?? ''),
+      explanation: typeof item.explanation === 'string' ? item.explanation : String(item.explanation ?? item.fix ?? ''),
+      category: typeof item.category === 'string' ? item.category : undefined,
+      severity: ['error', 'warning', 'suggestion'].includes(item.severity) ? item.severity : undefined,
+    };
+  });
+}
+
 function buildAnalysisResult(
   parsed: Record<string, unknown>,
   tokenUsage: { input: number; output: number; model?: string } | undefined,
   fallbackCode: string,
 ): AnalysisResult {
   return {
-    errors: (parsed.errors as any[]) || [],
-    warnings: (parsed.warnings as any[]) || [],
-    suggestions: (parsed.suggestions as any[]) || [],
+    errors: normalizeIssues(parsed.errors),
+    warnings: normalizeIssues(parsed.warnings),
+    suggestions: normalizeIssues(parsed.suggestions),
     score: Math.max(0, Math.min(100, (parsed.score as number) || 0)),
     fixedCode: sanitizeFixedCode((parsed.fixedCode as string) || '') || fallbackCode,
     changes: (parsed.changes as string[]) || [],
@@ -144,7 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return (localStorage.getItem('kk_theme') as Theme) || 'dark';
   });
   const [providers, setProvidersState] = useState<AIProvider[]>(() => {
-    const defaultGemini = { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true, recommended: ['gemini-2.0-flash', 'gemini-2.0-flash-thinking-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'] };
+    const defaultGemini = { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent', model: 'gemini-3.5-flash', apiKey: '', isDefault: true, recommended: ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'] };
     const defaultGroq = { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'groq/compound-mini', apiKey: '', isDefault: true, recommended: ['groq/compound-mini', 'qwen/qwen3.6-27b', 'openai/gpt-oss-120b'] };
     const defaults = [defaultGemini, defaultGroq];
     try {
@@ -164,7 +180,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const activeId = localStorage.getItem('kk_active_provider') || 'gemini';
       const stored = localStorage.getItem('kk_providers');
       const defaults: AIProvider[] = [
-        { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true, recommended: ['gemini-2.0-flash', 'gemini-2.0-flash-thinking-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'] },
+        { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent', model: 'gemini-3.5-flash', apiKey: '', isDefault: true, recommended: ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'] },
         { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'groq/compound-mini', apiKey: '', isDefault: true, recommended: ['groq/compound-mini', 'qwen/qwen3.6-27b', 'openai/gpt-oss-120b'] },
       ];
       if (stored) {
@@ -177,7 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return defaults[0];
     } catch {
-      return { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true, recommended: ['gemini-2.0-flash', 'gemini-2.0-flash-thinking-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'] };
+      return { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent', model: 'gemini-3.5-flash', apiKey: '', isDefault: true, recommended: ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'] };
     }
   });
   const [activeResultTab, setActiveResultTab] = useState(() => {
@@ -322,6 +338,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } else {
         setAnalysisErrorType('noApiKey');
         showApiKeyNotification();
+        return;
+      }
+    }
+    if (activeProvider.apiKey && (!activeProvider.availableModels || activeProvider.availableModels.length === 0)) {
+      const fallback = providers.find((p) => p.id !== activeProvider.id && p.apiKey && p.availableModels && p.availableModels.length > 0);
+      if (fallback) {
+        setActiveProviderState(fallback);
+        localStorage.setItem('kk_active_provider', fallback.id);
+      } else {
+        toast.error(t('settings.validationRequired'));
         return;
       }
     }

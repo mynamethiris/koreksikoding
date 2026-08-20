@@ -228,7 +228,12 @@
     "pasted": "API key berhasil ditempel",
     "pasteKey": "Tempel API Key",
     "recommendedModels": "Direkomendasikan",
-    "getApiKey": "Dapatkan kunci API"
+    "getApiKey": "Dapatkan kunci API",
+    "testing": "Menguji...",
+    "validated": "API Key valid - model terdeteksi",
+    "notValidated": "API Key belum valid - masukkan key yang benar",
+    "validationRequired": "API Key belum divalidasi. Masukkan key dan tunggu validasi sebelum digunakan.",
+    "keyRequired": "Masukkan API Key terlebih dahulu"
   },
   "beranda": {
     "badge": "Analisis Kode Berbasis AI",

@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-ro
 import { useTranslation } from 'react-i18next';
 import { Toaster } from 'react-hot-toast';
 import { MotionConfig, AnimatePresence, motion } from 'motion/react';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AppProvider } from '@/store/AppContext';
 import { ApiKeyNotification } from '@/components/ApiKeyNotification';
 import { ScopedEditorProvider } from '@/store/ScopedEditorContext';
@@ -91,6 +93,8 @@ function AppShell() {
       </main>
       <BottomNav />
       <ApiKeyNotification />
+      <Analytics />
+      <SpeedInsights />
       <Toaster
         position="top-center"
         toastOptions={{

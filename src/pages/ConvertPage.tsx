@@ -3,7 +3,7 @@ import { ArrowRightLeft, Loader2, Copy, Check, Trash2, ArrowLeftRight, Code2 } f
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { analyzeCode, getLanguageExtension, getConvertPrompt, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
+import { analyzeCode, getLanguageExtension, getConvertPrompt, canAnalyze, getRateLimitRemaining, ApiError, extractJSON } from '@/lib/api';
 import { lightTheme, darkTheme } from '@/lib/editor-themes';
 import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
 import { showApiKeyNotification } from '@/components/ApiKeyNotification';
@@ -80,14 +80,7 @@ export function ConvertPage() {
       const prompt = getConvertPrompt(targetLang);
       const { text } = await analyzeCode(sourceCode, 'auto', activeProvider, prompt);
 
-      let cleaned = text.trim();
-      if (cleaned.startsWith('```')) {
-        cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-      }
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('Invalid JSON response');
-
-      const parsed = JSON.parse(jsonMatch[0]);
+      const parsed = extractJSON(text) as Record<string, any>;
 
       setResult({
         code: parsed.convertedCode || '',

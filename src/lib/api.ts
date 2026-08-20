@@ -62,11 +62,11 @@ const DEFAULT_PROVIDERS: AIProvider[] = [
   {
     id: 'gemini',
     name: 'Gemini',
-    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-    model: 'gemini-2.0-flash',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
+    model: 'gemini-3.5-flash',
     apiKey: '',
     isDefault: true,
-    recommended: ['gemini-2.0-flash', 'gemini-2.0-flash-thinking-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+    recommended: ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'],
   },
   {
     id: 'groq',
@@ -105,7 +105,10 @@ export async function getProviders(): Promise<AIProvider[]> {
 
       return DEFAULT_PROVIDERS.map((dp) => {
         const custom = parsed.find((p) => p.id === dp.id);
-        return custom ? { ...dp, apiKey: custom.apiKey, model: custom.model || dp.model } : dp;
+        if (!custom) return dp;
+        const model = custom.model || dp.model;
+        const isModelValid = !dp.recommended || dp.recommended.length === 0 || dp.recommended.includes(model);
+        return { ...dp, apiKey: custom.apiKey, model: isModelValid ? model : dp.model, availableModels: custom.availableModels || dp.availableModels };
       }).concat(parsed.filter((p) => !p.isDefault));
     }
   } catch { }
@@ -316,6 +319,11 @@ export function getCommunityLinks(errorMessage: string, language: string): { tit
 
 export { getAnalysisPrompt, getConvertPrompt, getTerminalErrorPrompt } from '@/lib/prompts';
 
+function stripThinkingBlocks(text: string): string {
+  if (!text) return '';
+  return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+}
+
 export async function analyzeCode(
   code: string,
   language: Language,
@@ -358,12 +366,16 @@ export async function analyzeCode(
         { role: 'user', content: `${i18n.language === 'en' ? 'Analyze this code:' : 'Analisis kode ini:'}\n\`\`\`${language}\n${code}\n\`\`\`` },
       ],
       temperature: 0.1,
+      max_tokens: 4096,
     }),
   });
   if (!res.ok) throw await parseErrorResponse(res, provider);
   const data = await res.json();
   const msg = data.choices?.[0]?.message;
-  const text = msg?.content || msg?.reasoning || '';
+  const content = msg?.content || '';
+  const reasoning = msg?.reasoning || '';
+  const stripped = stripThinkingBlocks(content);
+  let text = stripped || content || reasoning || '';
   const tokenUsage = data.usage ? {
     input: data.usage.prompt_tokens || 0,
     output: data.usage.completion_tokens || 0,
@@ -389,17 +401,40 @@ export function sanitizeFixedCode(raw: string): string {
 }
 
 export function parseAnalysisResponse(raw: string): Record<string, unknown> {
-  let cleaned = raw.trim();
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-  }
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Tidak ada JSON yang valid dalam respons');
-  const parsed = JSON.parse(jsonMatch[0]);
-  if (parsed.fixedCode && typeof parsed.fixedCode === 'string') {
+  const parsed = extractJSON(raw);
+  if (parsed && parsed.fixedCode && typeof parsed.fixedCode === 'string') {
     parsed.fixedCode = sanitizeFixedCode(parsed.fixedCode);
   }
   return parsed;
+}
+
+export function extractJSON(raw: string): Record<string, unknown> {
+  let cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  cleaned = cleaned.replace(/```(?:json)?\s*\n?/g, '').replace(/\n?```\s*$/g, '').trim();
+  let idx = cleaned.indexOf('{');
+  while (idx !== -1) {
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    const slice = cleaned.slice(idx);
+    for (let i = 0; i < slice.length; i++) {
+      const ch = slice[i];
+      if (escape) { escape = false; continue; }
+      if (ch === '\\') { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === '{') depth++;
+      if (ch === '}') {
+        depth--;
+        if (depth === 0) {
+          const candidate = slice.slice(0, i + 1);
+          try { return JSON.parse(candidate); } catch { break; }
+        }
+      }
+    }
+    idx = cleaned.indexOf('{', idx + 1);
+  }
+  throw new Error('Tidak ada JSON yang valid dalam respons');
 }
 
 const RATE_LIMIT_KEY = 'kk_rate_limit';
