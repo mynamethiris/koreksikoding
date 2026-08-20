@@ -31,7 +31,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   handleClearAndReset = () => {
     try {
-      localStorage.removeItem('kk_editor_state');
+      localStorage.removeItem('kk_koreksi_editor_state');
+      localStorage.removeItem('kk_tantangan_editor_store');
+      localStorage.removeItem('kk_tantangan_session');
       localStorage.removeItem('kk_analysis_state');
       localStorage.removeItem('kk_custom_prompt');
     } catch { }

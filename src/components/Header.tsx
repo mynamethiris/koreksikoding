@@ -12,7 +12,6 @@ export function Header() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
   const {
-    files, activeFileId,
     isAnalyzing,
     runAnalysis,
     theme, toggleTheme,
@@ -21,7 +20,6 @@ export function Header() {
   const [langVersion, setLangVersion] = useState(0);
   const langFlashTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const activeFile = files.find((f) => f.id === activeFileId);
   const isEditor = location.pathname === '/editor';
   const isHome = location.pathname === '/';
   const isGuides = location.pathname.startsWith('/guides');
@@ -121,14 +119,12 @@ export function Header() {
           {isEditor && (
             <motion.button
               key="analyze-desktop"
-              layout
-              layoutId="analyze-btn"
               onClick={handleAnalyze}
-              disabled={isAnalyzing || !activeFile}
+              disabled={isAnalyzing}
               data-analyze-btn
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               transition={animFast}
               className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-lg bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
@@ -146,13 +142,11 @@ export function Header() {
           {isEditor && (
             <motion.button
               key="analyze-mobile"
-              layout
-              layoutId="analyze-btn"
               onClick={handleAnalyze}
-              disabled={isAnalyzing || !activeFile}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              disabled={isAnalyzing}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               transition={animFast}
               className="flex sm:hidden items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
             >

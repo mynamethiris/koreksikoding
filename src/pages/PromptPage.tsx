@@ -7,6 +7,7 @@ import { analyzeCode, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/
 import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
 import { FadeIn } from '@/components/motion';
 import toast from 'react-hot-toast';
+import { showApiKeyNotification } from '@/components/ApiKeyNotification';
 
 type Mode = 'maker' | 'fixer';
 type Style = 'list' | 'analytic' | 'detail' | 'simple';
@@ -96,7 +97,7 @@ export function PromptPage() {
     if (!trimmed) return;
 
     if (!activeProvider.apiKey) {
-      toast.error(t('analysis.noApiKey'));
+      showApiKeyNotification();
       return;
     }
 

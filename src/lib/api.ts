@@ -18,13 +18,17 @@ import { getAnalysisPrompt } from '@/lib/prompts';
 export class ApiError extends Error {
   public status: number;
   public provider: string;
-  constructor(message: string, status: number, provider: string) {
+  public isModelUnavailable: boolean;
+  constructor(message: string, status: number, provider: string, isModelUnavailable = false) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.provider = provider;
+    this.isModelUnavailable = isModelUnavailable;
   }
 }
+
+const MODEL_BUSY_PATTERN = /busy|overloaded|temporarily unavailable|capacity|saturated|quota exceeded|model_not_found/i;
 
 async function parseErrorResponse(res: Response, provider: AIProvider): Promise<ApiError> {
   const text = await res.text().catch(() => '');
@@ -36,8 +40,11 @@ async function parseErrorResponse(res: Response, provider: AIProvider): Promise<
   } catch {
     detail = text.slice(0, 300);
   }
+  const isModelBusy = res.status === 503 || MODEL_BUSY_PATTERN.test(detail);
   let message: string;
-  if (res.status === 401) {
+  if (isModelBusy) {
+    message = i18n.t('analysis.error503');
+  } else if (res.status === 401) {
     message = i18n.t('analysis.error401');
   } else if (res.status === 403) {
     message = i18n.t('analysis.error403', { model: provider.model });
@@ -48,26 +55,27 @@ async function parseErrorResponse(res: Response, provider: AIProvider): Promise<
   } else {
     message = i18n.t('analysis.apiError', { status: res.status, error: detail });
   }
-  if (detail) message += ` | ${detail}`;
-  return new ApiError(message, res.status, provider.name);
+  return new ApiError(message, res.status, provider.name, isModelBusy);
 }
 
 const DEFAULT_PROVIDERS: AIProvider[] = [
   {
     id: 'gemini',
     name: 'Gemini',
-    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
-    model: 'gemini-3.6-flash',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    model: 'gemini-2.0-flash',
     apiKey: '',
     isDefault: true,
+    recommended: ['gemini-2.0-flash', 'gemini-2.0-flash-thinking-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'],
   },
   {
     id: 'groq',
     name: 'Groq',
     endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-    model: 'qwen3-32b',
+    model: 'groq/compound-mini',
     apiKey: '',
     isDefault: true,
+    recommended: ['groq/compound-mini', 'qwen/qwen3.6-27b', 'openai/gpt-oss-120b'],
   },
 ];
 
@@ -123,6 +131,19 @@ function getFileExtension(filename: string): string {
   return filename.split('.').pop()?.toLowerCase() || '';
 }
 
+export const LANGUAGES: Language[] = [
+  'python', 'javascript', 'typescript', 'jsx', 'tsx', 'java', 'c', 'cpp',
+  'cs', 'go', 'rust', 'php', 'ruby', 'kotlin', 'swift', 'dart',
+  'html', 'css', 'sql', 'json', 'xml', 'yaml',
+];
+
+export const LANG_DISPLAY: Record<string, string> = {
+  python: 'Python', javascript: 'JavaScript', typescript: 'TypeScript', jsx: 'JSX', tsx: 'TSX',
+  java: 'Java', c: 'C', cpp: 'C++', cs: 'C#', go: 'Go', rust: 'Rust',
+  php: 'PHP', ruby: 'Ruby', kotlin: 'Kotlin', swift: 'Swift', dart: 'Dart',
+  html: 'HTML', css: 'CSS', sql: 'SQL', json: 'JSON', xml: 'XML', yaml: 'YAML',
+};
+
 export function detectLanguage(filename: string): Language {
   const ext = getFileExtension(filename);
   const map: Record<string, Language> = {
@@ -150,7 +171,7 @@ export function detectLanguage(filename: string): Language {
     yml: 'yaml',
     yaml: 'yaml',
   };
-  return map[ext] || ext || 'javascript';
+  return map[ext] || 'javascript';
 }
 
 export function detectLanguageFromContent(code: string): Language {
@@ -159,9 +180,10 @@ export function detectLanguageFromContent(code: string): Language {
 
   try { JSON.parse(s); return 'json'; } catch {}
 
-  if (s.startsWith('<?xml') || (s.startsWith('<') && s.includes('</'))) return 'xml';
+  if (s.startsWith('<?xml') || /^[a-zA-Z][\w-]*\s*=/.test(s)) return 'xml';
   if (s.startsWith('---') || /^[\w-]+:\s/m.test(s)) return 'yaml';
-  if (/^<!DOCTYPE|^<html|^<head|^<body|^<div|^<section|^<main/m.test(s)) return 'html';
+  if (/^<!DOCTYPE|^<html|^<head|^<body|^<div|^<section|^<main|^<title|^<meta|^<link|^<script|^<style|^<header|^<footer|^<nav|^<article|^<aside|^<figure|^<p>|^<span|^<ul|^<ol|^<li|^<h[1-6]|^<a\s|^<img|^<button|^<input|^<form|^<table/m.test(s)) return 'html';
+  if (s.startsWith('<') && s.includes('</')) return 'xml';
   if (/^@(media|import|keyframes|font-face)|^\.[\w-]+\s*\{|^[\w-]+\s*\{/m.test(s)) return 'css';
   if (/^SELECT\s|^INSERT\s|^CREATE\s|^ALTER\s|^DROP\s|^UPDATE\s|^DELETE\s/m.test(s)) return 'sql';
   if (/^#include\s|^int\s+main|^void\s|^printf\(|^cout\s|^cin\s/m.test(s)) return 'c';
@@ -262,7 +284,8 @@ export async function fetchAvailableModels(provider: AIProvider): Promise<string
       return models.length > 0 ? models : [];
     }
 
-    const res = await fetch('https://api.groq.com/openai/v1/models', {
+    const base = provider.endpoint.replace(/\/chat\/completions$/, '');
+    const res = await fetch(`${base}/models`, {
       headers: { Authorization: `Bearer ${provider.apiKey}` },
     });
     if (!res.ok) return [];
@@ -335,12 +358,12 @@ export async function analyzeCode(
         { role: 'user', content: `${i18n.language === 'en' ? 'Analyze this code:' : 'Analisis kode ini:'}\n\`\`\`${language}\n${code}\n\`\`\`` },
       ],
       temperature: 0.1,
-      response_format: { type: 'json_object' },
     }),
   });
   if (!res.ok) throw await parseErrorResponse(res, provider);
   const data = await res.json();
-  const text = data.choices?.[0]?.message?.content || '';
+  const msg = data.choices?.[0]?.message;
+  const text = msg?.content || msg?.reasoning || '';
   const tokenUsage = data.usage ? {
     input: data.usage.prompt_tokens || 0,
     output: data.usage.completion_tokens || 0,

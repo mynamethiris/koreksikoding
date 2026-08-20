@@ -99,4 +99,15 @@ export const db = {
     await tx.done;
     return count;
   },
+
+  async deleteAll(): Promise<void> {
+    try { dbInstance?.close(); } catch { }
+    dbInstance = null;
+    await new Promise<void>((resolve) => {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+      req.onblocked = () => resolve();
+    });
+  },
 };

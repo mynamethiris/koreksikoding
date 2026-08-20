@@ -1,18 +1,39 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Trash2, Download, Upload, Calendar, AlertTriangle, AlertCircle, Info, RotateCcw, Trophy, CheckCircle, Clock, Play } from 'lucide-react';
+import { Search, Trash2, Download, Upload, Calendar, AlertTriangle, AlertCircle, Info, RotateCcw, Trophy, Clock, Play, Eye, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { db } from '@/lib/db';
-import { formatTimestamp, exportToJSON, exportToCSV, downloadFile, getFileExtensionForLanguage } from '@/lib/api';
+import { formatTimestamp, exportToJSON, exportToCSV, downloadFile, getFileExtensionForLanguage, getLanguageExtension, LANG_DISPLAY } from '@/lib/api';
 import { FadeIn } from '@/components/motion';
 import { PageSkeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
-import { ConfirmModal } from '@/components/Modal';
+import { ConfirmModal, Modal } from '@/components/Modal';
 import { useApp } from '@/store/AppContext';
-import { LANG_DISPLAY } from '@/pages/TantanganPage';
 import type { HistoryEntry, ChallengeHistoryEntry } from '@/types';
+import CodeMirror from '@uiw/react-codemirror';
+import { lightTheme, darkTheme } from '@/lib/editor-themes';
 import toast from 'react-hot-toast';
+
+function parseCSVRow(line: string): string[] {
+  const cols: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let j = 0; j < line.length; j++) {
+    const ch = line[j];
+    if (inQuotes) {
+      if (ch === '"' && line[j + 1] === '"') { current += '"'; j++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { current += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { cols.push(current); current = ''; }
+      else { current += ch; }
+    }
+  }
+  cols.push(current);
+  return cols;
+}
 
 type TabType = 'analysis' | 'challenges';
 
@@ -30,7 +51,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 
 export function RiwayatPage() {
   const { t, i18n } = useTranslation();
-  const { setFiles, setActiveFileId, setAnalysisResult } = useApp();
+  const { setFiles, setActiveFileId, setAnalysisResult, theme } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('analysis');
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -42,6 +63,8 @@ export function RiwayatPage() {
   const [restoreTarget, setRestoreTarget] = useState<HistoryEntry | null>(null);
   const [deleteChallengeTarget, setDeleteChallengeTarget] = useState<string | null>(null);
   const [clearAllChallengesConfirm, setClearAllChallengesConfirm] = useState(false);
+  const [viewTarget, setViewTarget] = useState<HistoryEntry | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const challengeFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -174,32 +197,7 @@ export function RiwayatPage() {
         const lines = text.split('\n').filter((l) => l.trim());
         if (lines.length < 2) throw new Error(t('riwayat.csvEmpty'));
         for (let i = 1; i < lines.length; i++) {
-          const cols: string[] = [];
-          let current = '';
-          let inQuotes = false;
-          for (let j = 0; j < lines[i].length; j++) {
-            const ch = lines[i][j];
-            if (inQuotes) {
-              if (ch === '"' && lines[i][j + 1] === '"') {
-                current += '"';
-                j++;
-              } else if (ch === '"') {
-                inQuotes = false;
-              } else {
-                current += ch;
-              }
-            } else {
-              if (ch === '"') {
-                inQuotes = true;
-              } else if (ch === ',') {
-                cols.push(current);
-                current = '';
-              } else {
-                current += ch;
-              }
-            }
-          }
-          cols.push(current);
+          const cols = parseCSVRow(lines[i]);
           if (cols.length < 5) continue;
           const [dateStr, score, errorCount, warningCount, suggestionCount] = cols;
           parsed.push({
@@ -243,32 +241,7 @@ export function RiwayatPage() {
         const lines = text.split('\n').filter((l) => l.trim());
         if (lines.length < 2) throw new Error(t('riwayat.csvEmpty'));
         for (let i = 1; i < lines.length; i++) {
-          const cols: string[] = [];
-          let current = '';
-          let inQuotes = false;
-          for (let j = 0; j < lines[i].length; j++) {
-            const ch = lines[i][j];
-            if (inQuotes) {
-              if (ch === '"' && lines[i][j + 1] === '"') {
-                current += '"';
-                j++;
-              } else if (ch === '"') {
-                inQuotes = false;
-              } else {
-                current += ch;
-              }
-            } else {
-              if (ch === '"') {
-                inQuotes = true;
-              } else if (ch === ',') {
-                cols.push(current);
-                current = '';
-              } else {
-                current += ch;
-              }
-            }
-          }
-          cols.push(current);
+          const cols = parseCSVRow(lines[i]);
           if (cols.length < 4) continue;
           const [dateStr, title, difficulty, language] = cols;
           parsed.push({
@@ -472,6 +445,13 @@ export function RiwayatPage() {
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <motion.button
+                          onClick={() => setViewTarget(entry)}
+                          className="p-1.5 hover:bg-accent/10 hover:text-accent rounded-lg transition-colors"
+                          title={t('riwayat.viewCode', 'Lihat kode')}
+                        >
+                          <Eye size={12} />
+                        </motion.button>
+                        <motion.button
                           onClick={() => setRestoreTarget(entry)}
                           className="p-1.5 hover:bg-accent/10 hover:text-accent rounded-lg transition-colors"
                           title={t('riwayat.restoreHint')}
@@ -642,6 +622,96 @@ export function RiwayatPage() {
         confirmLabel={t('riwayat.deleteAllChallengesConfirm')}
         confirmDanger
       />
+
+      <Modal
+        open={viewTarget !== null}
+        onClose={() => setViewTarget(null)}
+        title={viewTarget ? `${formatTimestamp(viewTarget.timestamp)} • ${viewTarget.score}/100` : ''}
+        className="max-w-3xl w-full max-h-[80vh]"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-mono">{LANG_DISPLAY[viewTarget?.language || ''] || viewTarget?.language || 'javascript'}</span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <AlertCircle size={10} className="text-destructive" /> {viewTarget?.errorCount} {t('analysis.stat.error')}</span>
+              <span className="flex items-center gap-1">
+                <AlertTriangle size={10} className="text-warning" /> {viewTarget?.warningCount} {t('analysis.stat.warning')}</span>
+              <span className="flex items-center gap-1">
+                <Info size={10} className="text-info" /> {viewTarget?.suggestionCount} {t('analysis.stat.suggestion')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={async () => {
+                  if (viewTarget) {
+                    try {
+                      await navigator.clipboard.writeText(viewTarget.code);
+                      setCopiedCode(true);
+                      toast.success(t('analysis.copied'));
+                      setTimeout(() => setCopiedCode(false), 2000);
+                    } catch {
+                      toast.error(t('analysis.errorUnknown', { error: 'Gagal menyalin' }));
+                    }
+                  }
+                }}
+                className="p-1 hover:bg-muted rounded transition-colors text-muted-foreground"
+                title={t('analysis.copy')}
+              >
+                {copiedCode ? <Check size={12} className="text-success" /> : <Copy size={12} />}
+              </button>
+              <button
+                onClick={() => {
+                  if (viewTarget) {
+                    const ext = getFileExtensionForLanguage(viewTarget.language);
+                    downloadFile(viewTarget.code, `code-${viewTarget.id}.${ext}`, 'text/plain');
+                    toast.success(t('analysis.fileDownloaded'));
+                  }
+                }}
+                className="p-1 hover:bg-muted rounded transition-colors text-muted-foreground"
+                title={t('analysis.download')}
+              >
+                <Download size={12} />
+              </button>
+            </div>
+          </div>
+          <div className="border border-border rounded-lg overflow-hidden">
+            <CodeMirror
+              value={viewTarget?.code || ''}
+              readOnly
+              extensions={[getLanguageExtension(viewTarget?.language || 'javascript')]}
+              theme={theme === 'dark' ? darkTheme : lightTheme}
+              basicSetup={{
+                lineNumbers: true,
+                highlightActiveLine: false,
+                highlightActiveLineGutter: false,
+                foldGutter: true,
+                bracketMatching: true,
+              }}
+              style={{ height: '400px', fontSize: '13px' }}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <button
+              onClick={() => setViewTarget(null)}
+              className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-muted transition-colors text-muted-foreground"
+            >
+              {t('modal.cancel')}
+            </button>
+            {viewTarget && (
+              <button
+                onClick={() => {
+                  handleRestore(viewTarget);
+                  setViewTarget(null);
+                }}
+                className="px-3 py-1.5 text-xs rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+              >
+                {t('riwayat.restoreCode')}
+              </button>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

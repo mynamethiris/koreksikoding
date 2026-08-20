@@ -1,4 +1,4 @@
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useHasExceeded } from '@/lib/useSlowTimer';
@@ -56,10 +56,12 @@ export function AsyncError({
   error,
   onRetry,
   onRefresh,
+  onSwitchProvider,
 }: {
   error: string;
   onRetry?: () => void;
   onRefresh?: () => void;
+  onSwitchProvider?: () => void;
 }) {
   const { t } = useTranslation();
   const action = onRetry ?? onRefresh;
@@ -76,6 +78,7 @@ export function AsyncError({
         <AlertCircle size={24} className="text-destructive" />
       </div>
       <p className="text-xs text-muted-foreground max-w-sm break-words leading-relaxed">{error}</p>
+      <div className="flex items-center gap-2">
       {action && (
         <motion.button
           onClick={action}
@@ -86,6 +89,18 @@ export function AsyncError({
           {label}
         </motion.button>
       )}
+      {onSwitchProvider && (
+        <motion.button
+          onClick={onSwitchProvider}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-lg border border-border hover:bg-muted text-muted-foreground transition-colors"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+        >
+          <Settings size={12} />
+          {t('analysis.openSettings')}
+        </motion.button>
+      )}
+      </div>
     </motion.div>
   );
 }

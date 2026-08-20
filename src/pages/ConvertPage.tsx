@@ -6,6 +6,7 @@ import { useApp } from '@/store/AppContext';
 import { analyzeCode, getLanguageExtension, getConvertPrompt, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
 import { lightTheme, darkTheme } from '@/lib/editor-themes';
 import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
+import { showApiKeyNotification } from '@/components/ApiKeyNotification';
 import { FadeIn } from '@/components/motion';
 import CodeMirror from '@uiw/react-codemirror';
 import { editorKeymap } from '@/lib/editor-keymap';
@@ -62,7 +63,7 @@ export function ConvertPage() {
     }
 
     if (!activeProvider.apiKey) {
-      toast.error(t('analysis.noApiKey'));
+      showApiKeyNotification();
       return;
     }
 
@@ -173,8 +174,10 @@ export function ConvertPage() {
             <button
               key={tab}
               onClick={() => { prevMobileTabRef.current = mobileTab; setMobileTab(tab); }}
-              className={`flex-1 py-2.5 text-xs font-medium text-center transition-colors relative ${
-                mobileTab === tab ? 'text-accent' : 'text-muted-foreground'
+              className={`flex-1 py-2.5 text-xs font-medium text-center transition-all relative border-b-2 ${
+                mobileTab === tab
+                  ? 'text-accent border-accent bg-accent/10'
+                  : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50'
               }`}
             >
               {tab === 'source' ? (i18n.language === 'en' ? 'Source' : 'Sumber') : (i18n.language === 'en' ? 'Result' : 'Hasil')}

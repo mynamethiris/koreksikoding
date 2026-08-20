@@ -57,6 +57,7 @@
     "sendingTo": "Sending to {{provider}}",
     "noCode": "No code to analyze",
     "noApiKey": "API key not configured. Open Settings to configure.",
+    "noApiKeyToast": "API key not configured. Set up a provider in Settings.",
     "rateLimit": "Analysis limit reached ({{remaining}} remaining). Try again later.",
     "error401": "Invalid API key. Check your API key in Settings.",
     "error403": "Request blocked (403). Model '{{model}}' may be unavailable.",
@@ -98,7 +99,16 @@
     "markdownWarningDetail": "Warning Detail",
     "markdownSuggestionDetail": "Suggestion Detail",
     "markdownFixedCode": "Fixed Code",
-    "markdownExportTitle": "KoreksiKoding Analysis Results"
+    "markdownExportTitle": "KoreksiKoding Analysis Results",
+    "error503": "Model is busy or unavailable. Try switching models in Settings.",
+    "openSettings": "Open Settings",
+    "configureProvider": "Configure Provider",
+    "getApiKey": "Get API Key",
+    "providerNotConfigured": "Provider not configured",
+    "goToSettings": "Go to Settings",
+    "apiKeyRequired": "API Key required to analyze code",
+    "switchProvider": "Switch Model",
+    "autoSwitched": "Switched to {{provider}} due to previous provider failure."
   },
   "tools": {
     "title": "Other Tools",
@@ -214,7 +224,11 @@
     "confirmDeleteTitle": "Delete All Data",
     "confirmDeleteMsg": "All analysis history, provider settings, and saved data will be permanently deleted. The application will reload. Are you sure?",
     "confirmDeleteBtn": "Yes, Delete All",
-    "dataCleared": "All data successfully deleted"
+    "dataCleared": "All data successfully deleted",
+    "pasted": "API key pasted successfully",
+    "pasteKey": "Paste API Key",
+    "recommendedModels": "Recommended",
+    "getApiKey": "Get API Key"
   },
   "beranda": {
     "badge": "AI-Powered Code Analysis",
@@ -238,8 +252,8 @@
     "feature3Desc": "Explanations, concepts, exercises, and a refactoring score to understand mistakes.",
     "feature4Title": "Privacy & Security",
     "feature4Desc": "Code is never stored on a server. Includes vulnerability & duplication scan, no tracking.",
-    "step1Label": "Upload",
-    "step1Desc": "Upload a file (20+ languages) or type directly in the editor",
+    "step1Label": "Upload or Type Code",
+    "step1Desc": "Type code directly or upload a file",
     "step2Label": "Analyze",
     "step2Desc": "AI analyzes: errors, warnings, suggestions, and a score",
     "step3Label": "Get Results",
@@ -275,28 +289,72 @@
       "API keys stay in your browser (localStorage)",
       "No tracking or third parties"
     ],
-    "viewGuides": "View Guides",
-    "guideTips": "Effective Learning Tips",
-    "tipsItems": [
-      "Follow guides in order: Logic → Debugging → IDE...",
-      "Complete quizzes at end of each chapter to unlock next guide",
-      "Mark sections complete to track progress",
-      "Try coding challenges on the Challenges page"
+    "viewFaq": "View Questions",
+    "byokBadge": "Bring Your Own Key (BYOK)",
+    "faqTitle": "Frequently Asked Questions",
+    "faqDesc": "Answers to commonly asked questions",
+    "viewFaq": "View Questions",
+    "faq": [
+      {
+        "q": "How is this platform different from AI like Gemini or ChatGPT?",
+        "a": "This platform is designed specifically for code analysis. You paste or upload code, and the AI instantly gives a score, list of errors, fixes, explanations, and learning tips. Gemini and ChatGPT are general-purpose, while KoreksiKoding focuses on one thing: code."
+      },
+      {
+        "q": "Will my data be used to train AI?",
+        "a": "No. The code you enter is sent directly to the API provider (Gemini or Groq) for analysis and is not stored or used to train AI models."
+      },
+      {
+        "q": "What programming languages are supported?",
+        "a": "KoreksiKoding supports over 20 languages, including Python, JavaScript, TypeScript, Java, C, C++, C#, Go, Rust, PHP, Ruby, Kotlin, Swift, Dart, HTML, CSS, SQL, JSON, XML, and YAML."
+      },
+      {
+        "q": "Is the AI correction always 100% accurate?",
+        "a": "Not always. The AI helps find common issues and provides fix suggestions, but you should always verify and run the code yourself to confirm the results."
+      },
+      {
+        "q": "How do I report a problem or bug?",
+        "a": "Please visit our GitHub Issues page and create a new report. Our team will follow up promptly.",
+        "link": "https://github.com/mynamethiris/koreksikoding/issues"
+      },
+      {
+        "q": "Is this service free to use?",
+        "a": "Yes. The platform is free. You only need to set up your own API key from Google AI Studio (Gemini) or Groq Console."
+      },
+      {
+        "q": "Do I need to create an account to start correcting code?",
+        "a": "No. There is no registration or login. Open the site, enter your API key, and start using it right away."
+      },
+      {
+        "q": "How secure is the code I enter on this platform?",
+        "a": "Code is never stored on a server. All analysis happens directly through your chosen API provider, and API keys stay stored in your browser."
+      },
+      {
+        "q": "What is the maximum number of lines or characters that can be checked?",
+        "a": "There is no line limit from the platform. The maximum is determined by the API provider you use. Gemini and Groq typically support up to tens of thousands of tokens per request."
+      },
+      {
+        "q": "Can this platform fix errors automatically (auto-fix)?",
+        "a": "Yes. After analysis, you can view the corrected code along with a list of changes. You can copy or download the fixed code directly."
+      }
     ]
   },
   "fileUpload": {
     "selectLang": "Select language for {{name}}:",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "readError": "Failed to read file"
   },
   "editorPage": {
     "editorTab": "Correction",
-    "analysisTab": "Analysis Results"
+    "analysisTab": "Analysis Results",
+    "restored": "Previous code restored!"
   },
   "codeEditor": {
     "emptyTitle": "Type code or upload a file to start analyzing",
     "emptyDesc": "Drag & drop a file here too",
     "clearAll": "Clear all",
-    "rename": "Rename"
+    "rename": "Rename",
+    "language": "Language",
+    "clearContent": "Clear content"
   },
   "riwayat": {
     "title": "Analysis History",
@@ -339,7 +397,8 @@
     "deleteAllChallenges": "Delete All Challenge History",
     "deleteAllChallengesMsg": "All challenge history will be permanently deleted. This action cannot be undone.",
     "deleteAllChallengesConfirm": "Yes, Delete All Challenges",
-    "challengesSubtitle": "{{completed}} completed, {{total}} total"
+    "challengesSubtitle": "{{completed}} completed, {{total}} total",
+    "viewCode": "View Code"
   },
   "challenge": {
     "title": "Coding Challenges",
@@ -366,7 +425,9 @@
     "surrender": "Give Up",
     "hideSurrender": "Hide",
     "surrenderCardTitle": "Solution & Explanation",
-    "resetSurrender": "Next Challenge"
+    "resetSurrender": "Next Challenge",
+    "instruction": "Start Challenge",
+    "instructionDetail": "1. Read the challenge description. 2. Fix the broken code in the editor. 3. Click Check to compare with the correct solution."
   },
   "convert": {
     "targetLang": "Target Language",

@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Toaster } from 'react-hot-toast';
 import { MotionConfig, AnimatePresence, motion } from 'motion/react';
 import { AppProvider } from '@/store/AppContext';
+import { ApiKeyNotification } from '@/components/ApiKeyNotification';
+import { ScopedEditorProvider } from '@/store/ScopedEditorContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
@@ -40,7 +42,11 @@ function AnimatedRoutes() {
             <Route path="/" element={<BerandaPage />} />
             <Route path="/editor" element={<EditorPage />} />
             <Route path="/history" element={<RiwayatPage />} />
-            <Route path="/challenges" element={<TantanganPage />} />
+            <Route path="/challenges" element={
+              <ScopedEditorProvider storageKey="kk_tantangan_editor_store" legacyKey="kk_tantangan_session">
+                <TantanganPage />
+              </ScopedEditorProvider>
+            } />
             <Route path="/terminal" element={<TerminalPage />} />
             <Route path="/share-code" element={<SharePage />} />
             <Route path="/prompt-builder" element={<PromptPage />} />
@@ -84,6 +90,7 @@ function AppShell() {
         <AnimatedRoutes />
       </main>
       <BottomNav />
+      <ApiKeyNotification />
       <Toaster
         position="top-center"
         toastOptions={{

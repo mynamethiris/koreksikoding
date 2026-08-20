@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Trophy, Lightbulb, Code2, Flame, Loader2, CheckCircle, XCircle, ArrowRight, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
+import { useScopedEditor } from '@/store/ScopedEditorContext';
 import { analyzeCode, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
 import { db } from '@/lib/db';
 import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
 import { CodeEditor } from '@/components/CodeEditor';
 import { FadeIn } from '@/components/motion';
 import toast from 'react-hot-toast';
+import { showApiKeyNotification } from '@/components/ApiKeyNotification';
 import type { Language } from '@/types';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -63,7 +65,8 @@ RULES:
 
 export function TantanganPage() {
   const { t, i18n } = useTranslation();
-  const { files, addFile, clearAll, setActiveFileId, activeProvider } = useApp();
+  const { activeProvider } = useApp();
+  const { files, activeFileId, setFiles, setManualLanguage, reset } = useScopedEditor();
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(() => {
     try {
       return (localStorage.getItem('kk_challenge_difficulty') as Difficulty) || null;
@@ -89,7 +92,16 @@ export function TantanganPage() {
       return null;
     }
   });
-  const [challengeStarted, setChallengeStarted] = useState(false);
+  const [challengeStarted, setChallengeStarted] = useState(() => {
+    try {
+      const raw = localStorage.getItem('kk_tantangan_session');
+      if (raw) {
+        const s = JSON.parse(raw);
+        return !!s.challengeStarted;
+      }
+    } catch {}
+    return false;
+  });
   const [showSurrenderCard, setShowSurrenderCard] = useState(false);
   const [showHints, setShowHints] = useState(false);
   const [showTestCases, setShowTestCases] = useState(false);
@@ -114,7 +126,7 @@ export function TantanganPage() {
 
   const generateChallenge = useCallback(async (difficulty: Difficulty) => {
     if (!activeProvider.apiKey) {
-      toast.error(t('analysis.noApiKey'));
+      showApiKeyNotification();
       return;
     }
 
@@ -226,15 +238,13 @@ export function TantanganPage() {
 
   const startChallenge = () => {
     if (!challenge) return;
-    clearAll();
     const newFile = {
       id: crypto.randomUUID(),
       name: `challenge.${challenge.language === 'cpp' ? 'cpp' : challenge.language}`,
       language: challenge.language,
       content: challenge.starterCode,
     };
-    addFile(newFile);
-    setActiveFileId(newFile.id);
+    setFiles([newFile]);
     setChallengeStarted(true);
     setShowSurrenderCard(false);
     setCheckResult(null);
@@ -260,6 +270,28 @@ export function TantanganPage() {
     } catch {}
   }, [challenge, selectedDifficulty, selectedLang]);
 
+  useEffect(() => {
+    if (challengeStarted && activeFileId) {
+      setManualLanguage(activeFileId, selectedLang);
+    }
+  }, [selectedLang, challengeStarted, activeFileId, setManualLanguage]);
+
+  useEffect(() => {
+    try {
+      if (challengeStarted) {
+        localStorage.setItem('kk_tantangan_session', JSON.stringify({ challengeStarted }));
+      } else {
+        localStorage.removeItem('kk_tantangan_session');
+      }
+    } catch {}
+  }, [challengeStarted]);
+
+  useEffect(() => {
+    if (!challengeStarted && files.some((f) => f.name.startsWith('challenge.'))) {
+      reset();
+    }
+  }, [challengeStarted, files, reset]);
+
   function ChallengeCard() {
     return (
       <div className="space-y-3 sm:space-y-4">
@@ -278,8 +310,16 @@ export function TantanganPage() {
         </div>
 
         <div>
-          <h2 className="text-sm sm:text-base font-bold text-foreground">{challenge!.title}</h2>
+          <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+            {challenge!.title}
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-accent/10 text-accent font-medium">
+              {t('challenge.modeFix', 'Perbaiki Kode')}
+            </span>
+          </h2>
           <p className="text-xs text-muted-foreground leading-relaxed mt-1">{challenge!.description}</p>
+          <div className="mt-2 p-2 rounded-lg border border-info/20 bg-info/5 text-[10px] text-info leading-relaxed">
+            {t('challenge.instructionDetail')}
+          </div>
         </div>
 
         {challenge!.testCases.length > 0 && (
@@ -443,8 +483,8 @@ export function TantanganPage() {
   return (
     <div className="flex flex-col h-[calc(100dvh-52px-56px)] sm:h-[calc(100dvh-52px)]">
       <FadeIn>
-        <div className="px-3 sm:px-6 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border bg-card shrink-0">
-          <div className="flex items-center justify-between max-w-6xl mx-auto mb-2 sm:mb-3">
+        <div className="px-2 sm:px-4 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border bg-card shrink-0">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-accent/10">
                 <Trophy size={18} className="text-accent" />
@@ -475,7 +515,7 @@ export function TantanganPage() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 max-w-6xl mx-auto">
+          <div className="flex items-center gap-2">
             <div className="relative shrink-0">
               <button
                 onClick={() => setShowLangPicker(!showLangPicker)}
@@ -554,8 +594,10 @@ export function TantanganPage() {
               <button
                 key={tab}
                 onClick={() => setMobileTab(tab)}
-                className={`flex-1 py-2.5 text-xs font-medium text-center transition-colors relative ${
-                  mobileTab === tab ? 'text-accent' : 'text-muted-foreground'
+                className={`flex-1 py-2.5 text-xs font-medium text-center transition-all relative border-b-2 ${
+                  mobileTab === tab
+                    ? 'text-accent border-accent bg-accent/10'
+                    : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 {tab === 'editor' ? t('editorPage.editorTab') : t('header.challenges', 'Tantangan')}
@@ -582,7 +624,7 @@ export function TantanganPage() {
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               >
                 {mobileTab === 'editor' ? (
-                  <CodeEditor challengeMode />
+                  <CodeEditor hideToolbar />
                 ) : (
                   <div className="h-full overflow-y-auto">
                     {isGenerating && (
@@ -629,7 +671,7 @@ export function TantanganPage() {
       ) : (
         <div className="flex-1 min-h-0 flex">
           <div className="w-1/2 min-w-0 border-r border-border">
-            <CodeEditor challengeMode />
+            <CodeEditor hideToolbar />
           </div>
 
           <div className="w-1/2 min-w-0 overflow-y-auto">

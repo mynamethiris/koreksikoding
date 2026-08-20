@@ -7,12 +7,21 @@ Platform analisis kode berbasis AI. Kode dianalisis secara instan untuk mendetek
 - **Analisis Cerdas** - Deteksi error, warning, saran perbaikan otomatis pakai AI
 - **CodeMirror 6** - Editor kode dengan syntax highlighting untuk 20+ bahasa
 - **Perbaikan Instan** - Kode yang sudah diperbaiki beserta penjelasan detail
+- **Keamanan & Duplikasi** - Deteksi vulnerability (CWE) dan code duplication
 - **Mode Belajar** - Konsep pemrograman terkait dan tips untuk meningkatkan pemahaman
+- **Terminal Error Analyzer** - Analisis pesan error terminal dan dapatkan solusi
+- **Code Converter** - Konversi kode antar bahasa pemrograman dengan penjelasan
+- **Prompt Builder** - Buat dan perbaiki prompt untuk AI
+- **Coding Challenge** - Tantangan coding interaktif dengan verifikasi solusi
+- **Typing Test** - Latihan mengetik kode dengan pengukuran WPM dan akurasi
+- **Snippet Sharing** - Bagikan kode via link (berlaku 2 jam)
+- **Learning Guides** - Panduan belajar interaktif dengan quiz
 - **Riwayat Analisis** - Tersimpan lokal di IndexedDB, bisa di-export ke JSON/CSV
 - **Multi Provider** - Gemini, Groq, atau custom provider OpenAI-compatible
 - **Dark/Light Mode** - Toggle tema gelap dan terang
 - **Responsive** - Split-pane di desktop, tabbed view di mobile
 - **Privasi Terjaga** - Tidak ada backend, kode tidak pernah disimpan di server
+- **Multi Bahasa** - Dukungan Indonesia dan English
 
 ## Tech Stack
 
@@ -27,6 +36,7 @@ Platform analisis kode berbasis AI. Kode dianalisis secara instan untuk mendetek
 | Routing | React Router 7 |
 | Persistensi | IndexedDB (idb) |
 | Ikon | Lucide React |
+| Linting | oxlint |
 
 ## Prasyarat
 
@@ -55,6 +65,6 @@ Buka halaman **Pengaturan** untuk mengatur provider AI:
 
 1. **Gemini** (default) - Dapatkan API key gratis dari [Google AI Studio](https://aistudio.google.com)
 2. **Groq** (default) - Dapatkan API key gratis dari [console.groq.com](https://console.groq.com)
-3. **Custom Provider** - Tambah provider dengan endpoint OpenAI-compatible
+3. **Custom Provider** - Tambah provider dengan endpoint OpenAI-compatible (Mistral, OpenAI, dll)
 
 API key disimpan di `localStorage` browser Anda, tidak dikirim ke server manapun.

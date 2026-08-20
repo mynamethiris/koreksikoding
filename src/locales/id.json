@@ -56,7 +56,8 @@
     "analyzing": "Menganalisis kode...",
     "sendingTo": "Mengirim ke {{provider}}",
     "noCode": "Tidak ada kode untuk dianalisis",
-    "noApiKey": "API key belum dikonfigurasi. Buka Pengaturan untuk mengatur.",
+    "noApiKey": "API key belum dikonfigurasi.",
+    "noApiKeyToast": "API key belum dikonfigurasi. Atur provider di Pengaturan.",
     "rateLimit": "Batas analisis tercapai ({{remaining}} tersisa). Coba lagi nanti.",
     "error401": "API key tidak valid. Periksa API key di Pengaturan.",
     "error403": "Permintaan diblokir (403). Model '{{model}}' mungkin tidak tersedia.",
@@ -98,7 +99,16 @@
     "markdownWarningDetail": "Detail Peringatan",
     "markdownSuggestionDetail": "Detail Saran",
     "markdownFixedCode": "Kode Perbaikan",
-    "markdownExportTitle": "Hasil Analisis KoreksiKoding"
+    "markdownExportTitle": "Hasil Analisis KoreksiKoding",
+    "error503": "Model sedang sibuk. Coba ganti model lain di Pengaturan.",
+    "openSettings": "Buka Pengaturan",
+    "configureProvider": "Atur Provider",
+    "getApiKey": "Dapatkan kunci API",
+    "providerNotConfigured": "Provider belum dikonfigurasi",
+    "goToSettings": "Ke Pengaturan",
+    "apiKeyRequired": "API Key diperlukan untuk menganalisis kode",
+    "switchProvider": "Ganti Model",
+    "autoSwitched": "Beralih ke {{provider}} karena provider sebelumnya bermasalah."
   },
   "tools": {
     "title": "Alat Lainnya",
@@ -214,7 +224,11 @@
     "confirmDeleteTitle": "Hapus Semua Data",
     "confirmDeleteMsg": "Semua riwayat analisis, pengaturan penyedia, dan data tersimpan akan dihapus secara permanen. Aplikasi akan dimuat ulang. Anda yakin?",
     "confirmDeleteBtn": "Ya, Hapus Semua",
-    "dataCleared": "Semua data berhasil dihapus"
+    "dataCleared": "Semua data berhasil dihapus",
+    "pasted": "API key berhasil ditempel",
+    "pasteKey": "Tempel API Key",
+    "recommendedModels": "Direkomendasikan",
+    "getApiKey": "Dapatkan kunci API"
   },
   "beranda": {
     "badge": "Analisis Kode Berbasis AI",
@@ -238,8 +252,8 @@
     "feature3Desc": "Penjelasan, konsep, soal latihan, dan skor refaktor untuk memahami kesalahan.",
     "feature4Title": "Privasi & Keamanan",
     "feature4Desc": "Kode tak pernah disimpan di server. Termasuk pemindai kerentanan & duplikat, tanpa tracking.",
-    "step1Label": "Unggah",
-    "step1Desc": "Unggah file kode (20+ bahasa) ke editor",
+    "step1Label": "Unggah atau Ketik Kode",
+    "step1Desc": "Ketik kode langsung atau unggah file",
     "step2Label": "Analisis AI",
     "step2Desc": "AI menganalisis: error, peringatan, saran, dan skor",
     "step3Label": "Perbaikan",
@@ -275,28 +289,72 @@
       "API key tetap di browser Anda (localStorage)",
       "Tidak ada pelacakan atau pihak ketiga"
     ],
-    "viewGuides": "Lihat Panduan",
-    "guideTips": "Tips Belajar Efektif",
-    "tipsItems": [
-      "Ikuti panduan berurutan: Logic → Debugging → IDE...",
-      "Kerjakan quiz di akhir tiap bab untuk membuka guide berikutnya",
-      "Tandai section selesai untuk melacak progress",
-      "Coba tantangan coding di halaman Tantangan"
+    "viewFaq": "Lihat Pertanyaan",
+    "byokBadge": "Bawa Kunci Sendiri (BYOK)",
+    "faqTitle": "Pertanyaan Umum",
+    "faqDesc": "Jawaban atas pertanyaan yang sering ditanyakan",
+    "viewFaq": "Lihat Pertanyaan",
+    "faq": [
+      {
+        "q": "Apa bedanya platform ini dengan AI seperti Gemini atau ChatGPT?",
+        "a": "Platform ini dirancang khusus untuk analisis kode. Anda menempel atau unggah kode, lalu AI langsung memberikan skor, daftar error, perbaikan, penjelasan, dan tips belajar. Gemini dan ChatGPT lebih umum, sedangkan KoreksiKoding fokus pada satu hal: kode."
+      },
+      {
+        "q": "Apakah data saya akan digunakan untuk training AI?",
+        "a": "Tidak. Kode yang Anda masukkan dikirim langsung ke API provider (Gemini atau Groq) untuk dianalisis dan tidak disimpan atau digunakan untuk melatih model AI."
+      },
+      {
+        "q": "Bahasa pemrograman apa saja yang didukung?",
+        "a": "KoreksiKoding mendukung lebih dari 20 bahasa, termasuk Python, JavaScript, TypeScript, Java, C, C++, C#, Go, Rust, PHP, Ruby, Kotlin, Swift, Dart, HTML, CSS, SQL, JSON, XML, dan YAML."
+      },
+      {
+        "q": "Apakah hasil koreksi AI selalu 100% benar?",
+        "a": "Tidak selalu. AI membantu menemukan masalah umum dan memberikan saran perbaikan, tetapi tetap perlu Anda verifikasi dan jalankan kode sendiri untuk memastikan hasilnya benar."
+      },
+      {
+        "q": "Bagaimana cara melaporkan masalah atau bug?",
+        "a": "Silakan buka halaman Issues di GitHub kami, lalu buat laporan baru. Tim kami akan segera menindaklanjuti.",
+        "link": "https://github.com/mynamethiris/koreksikoding/issues"
+      },
+      {
+        "q": "Apakah layanan ini gratis digunakan?",
+        "a": "Ya. Platform ini gratis. Anda hanya perlu menyiapkan API key sendiri dari Google AI Studio (Gemini) atau Groq Console."
+      },
+      {
+        "q": "Apakah saya perlu membuat akun untuk mulai mengoreksi kode?",
+        "a": "Tidak. Tidak ada pendaftaran atau login. Buka situs, masukkan API key, lalu langsung gunakan."
+      },
+      {
+        "q": "Seberapa aman kode yang saya masukkan ke platform ini?",
+        "a": "Kode tidak pernah disimpan di server. Semua proses analisis terjadi langsung melalui API provider pilihan Anda, dan API key tetap tersimpan di browser Anda."
+      },
+      {
+        "q": "Berapa batas maksimal baris atau karakter kode yang bisa diperiksa?",
+        "a": "Tidak ada batas baris dari platform ini. Batas maksimal ditentukan oleh API provider yang Anda gunakan. Untuk Gemini dan Groq, umumnya mendukung hingga puluhan ribu token per permintaan."
+      },
+      {
+        "q": "Apakah platform ini bisa memperbaiki error secara otomatis (auto-fix)?",
+        "a": "Ya. Setelah analisis, Anda bisa melihat kode yang sudah diperbaiki beserta daftar perubahannya. Anda bisa langsung menyalin atau mengunduh hasil perbaikan tersebut."
+      }
     ]
   },
   "fileUpload": {
     "selectLang": "Pilih bahasa untuk {{name}}:",
-    "cancel": "Batal"
+    "cancel": "Batal",
+    "readError": "Gagal membaca file"
   },
   "editorPage": {
     "editorTab": "Koreksi",
-    "analysisTab": "Hasil Analisis"
+    "analysisTab": "Hasil Analisis",
+    "restored": "Kode sebelumnya berhasil dipulihkan!"
   },
   "codeEditor": {
     "emptyTitle": "Ketik kode atau unggah file untuk mulai menganalisis",
     "emptyDesc": "Seret & lepas file di sini juga",
     "clearAll": "Bersihkan semua",
-    "rename": "Ubah Nama"
+    "rename": "Ubah Nama",
+    "language": "Bahasa",
+    "clearContent": "Hapus isi"
   },
   "riwayat": {
     "title": "Riwayat Analisis",
@@ -339,7 +397,8 @@
     "deleteAllChallenges": "Hapus Semua Riwayat Tantangan",
     "deleteAllChallengesMsg": "Semua riwayat tantangan akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.",
     "deleteAllChallengesConfirm": "Ya, Hapus Semua Tantangan",
-    "challengesSubtitle": "{{completed}} selesai, {{total}} total"
+    "challengesSubtitle": "{{completed}} selesai, {{total}} total",
+    "viewCode": "Lihat kode"
   },
   "challenge": {
     "title": "Tantangan Coding",
@@ -366,7 +425,9 @@
     "surrender": "Menyerah",
     "hideSurrender": "Sembunyikan",
     "surrenderCardTitle": "Solusi & Penjelasan",
-    "resetSurrender": "Tantangan Berikutnya"
+    "resetSurrender": "Tantangan Berikutnya",
+    "instruction": "Mulai Tantangan",
+    "instructionDetail": "1. Baca deskripsi tantangan. 2. Perbaiki kode yang rusak di editor. 3. Klik Cek untuk membandingkan dengan solusi yang benar."
   },
   "convert": {
     "targetLang": "Bahasa Target",

@@ -1,16 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
-import { Upload, FolderOpen } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { detectLanguage } from '@/lib/api';
+import { detectLanguage, LANGUAGES, LANG_DISPLAY } from '@/lib/api';
 import type { EditorFile, Language } from '@/types';
-
-const LANGUAGES: Language[] = [
-  'python', 'javascript', 'typescript', 'jsx', 'tsx', 'java', 'c', 'cpp',
-  'cs', 'go', 'rust', 'php', 'ruby', 'kotlin', 'swift', 'dart',
-  'html', 'css', 'sql', 'json', 'xml', 'yaml',
-];
+import toast from 'react-hot-toast';
 
 export function FileUpload() {
   const { t } = useTranslation();
@@ -18,12 +13,15 @@ export function FileUpload() {
   const [showLangSelect, setShowLangSelect] = useState(false);
   const [pendingFile, setPendingFile] = useState<{ name: string; content: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const folderInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
+      if (!content && content !== '') {
+        toast.error(t('fileUpload.readError'));
+        return;
+      }
       const ext = file.name.split('.').pop()?.toLowerCase();
       const knownExts = ['py', 'js', 'ts', 'jsx', 'tsx', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb', 'kt', 'swift', 'dart', 'html', 'css', 'sql', 'json', 'xml', 'yml', 'yaml'];
       if (!ext || !knownExts.includes(ext)) {
@@ -38,14 +36,16 @@ export function FileUpload() {
         content,
       };
       addFile(newFile);
+      toast.success(t('analysis.fileLoaded'));
     };
+    reader.onerror = () => toast.error(t('fileUpload.readError'));
     reader.readAsText(file);
-  }, [addFile]);
+  }, [addFile, t]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
-    Array.from(files).forEach(processFile);
+    if (!files || !files[0]) return;
+    processFile(files[0]);
     e.target.value = '';
   }, [processFile]);
 
@@ -64,11 +64,8 @@ export function FileUpload() {
 
   return (
     <div className="relative">
-      <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" multiple className="hidden" onChange={handleFileChange}
+      <input ref={fileInputRef} id="file-upload" name="file-upload" type="file" className="hidden" onChange={handleFileChange}
         accept=".py,.js,.ts,.jsx,.tsx,.java,.c,.cpp,.cs,.go,.rs,.php,.rb,.kt,.swift,.dart,.html,.css,.sql,.json,.xml,.yml,.yaml" />
-      <input ref={folderInputRef} id="folder-upload" name="folder-upload" type="file" className="hidden" onChange={handleFileChange}
-        /* @ts-expect-error webkitdirectory is non-standard */
-        webkitdirectory="" multiple />
 
       <div className="flex items-center gap-1">
         <motion.button onClick={() => fileInputRef.current?.click()}
@@ -78,14 +75,6 @@ export function FileUpload() {
         >
           <Upload size={13} />
           <span className="hidden sm:inline">{t('header.upload')}</span>
-        </motion.button>
-        <motion.button onClick={() => folderInputRef.current?.click()}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-secondary hover:bg-accent/10 text-secondary-foreground transition-colors"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <FolderOpen size={13} />
-          <span className="hidden sm:inline">{t('header.folder')}</span>
         </motion.button>
       </div>
 
@@ -113,7 +102,7 @@ export function FileUpload() {
                 {LANGUAGES.map((lang) => (
                   <button key={lang} onClick={() => handleLangSelect(lang)}
                     className="w-full text-left px-2.5 py-1.5 text-sm rounded-lg hover:bg-accent/10 text-foreground transition-colors">
-                    {lang}
+                    {LANG_DISPLAY[lang] || lang}
                   </button>
                 ))}
               </div>

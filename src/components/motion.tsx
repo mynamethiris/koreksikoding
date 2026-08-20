@@ -27,8 +27,6 @@ interface FadeInProps {
   delay?: number;
   duration?: number;
   direction?: 'up' | 'down' | 'left' | 'right' | 'none';
-  once?: boolean;
-  amount?: number;
 }
 
 export function FadeIn({
@@ -37,8 +35,6 @@ export function FadeIn({
   delay = 0,
   duration = 0.5,
   direction = 'up',
-  once = true,
-  amount = 0.3,
 }: FadeInProps) {
   const reduce = useReducedMotion();
   const variants = {
@@ -66,12 +62,10 @@ export function FadeInStagger({
   children,
   className = '',
   staggerDelay = 0.06,
-  once = true,
 }: {
   children: ReactNode;
   className?: string;
   staggerDelay?: number;
-  once?: boolean;
 }) {
   const reduce = useReducedMotion();
   return (

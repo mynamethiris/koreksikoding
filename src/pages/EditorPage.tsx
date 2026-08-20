@@ -12,7 +12,13 @@ export function EditorPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { isAnalyzing, analysisResult } = useApp();
-  const [mobileTab, setMobileTab] = useState<'editor' | 'analysis'>('editor');
+  const [mobileTab, setMobileTab] = useState<'editor' | 'analysis'>(() => {
+    try {
+      return (localStorage.getItem('kk_editor_mobile_tab') as 'editor' | 'analysis') || 'editor';
+    } catch {
+      return 'editor';
+    }
+  });
   const [isMobile, setIsMobile] = useState(false);
   const prevMobileTabRef = useRef(mobileTab);
 
@@ -22,6 +28,12 @@ export function EditorPage() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('kk_editor_mobile_tab', mobileTab);
+    } catch { }
+  }, [mobileTab]);
 
   useEffect(() => {
     if (!isMobile) return;
@@ -64,8 +76,10 @@ export function EditorPage() {
             <button
               key={tab}
               onClick={() => handleMobileTabChange(tab)}
-              className={`flex-1 py-2.5 text-xs font-medium text-center transition-colors relative ${
-                mobileTab === tab ? 'text-accent' : 'text-muted-foreground'
+              className={`flex-1 py-2.5 text-xs font-medium text-center transition-all relative border-b-2 ${
+                mobileTab === tab
+                  ? 'text-accent border-accent bg-accent/10'
+                  : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50'
               }`}
             >
               {tab === 'editor' ? t('editorPage.editorTab') : t('editorPage.analysisTab')}

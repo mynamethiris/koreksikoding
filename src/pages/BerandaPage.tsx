@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Code2, Zap, ShieldCheck, Sparkles, AlertCircle, AlertTriangle, Info, CheckCircle, Upload, Cpu, Wrench, ChevronDown, BookOpen } from 'lucide-react';
+import { Code2, Zap, ShieldCheck, Sparkles, AlertCircle, AlertTriangle, Info, CheckCircle, Cpu, Wrench, ChevronDown, HelpCircle, ExternalLink, Pen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FadeIn, FadeInStagger, FadeInStaggerItem } from '@/components/motion';
-import { guideSections } from '@/lib/guideData';
+import { useApp } from '@/store/AppContext';
+import { showApiKeyNotification } from '@/components/ApiKeyNotification';
 
 export function BerandaPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [openGuide, setOpenGuide] = useState<number | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const { activeProvider } = useApp();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const faqItems = t('beranda.faq', { returnObjects: true }) as Array<{ q: string; a: string; link?: string }>;
 
   const FEATURES = [
     {
@@ -31,7 +34,7 @@ export function BerandaPage() {
     },
     {
       id: 'learn',
-      icon: BookOpen,
+      icon: HelpCircle,
       title: t('beranda.feature3Title'),
       description: t('beranda.feature3Desc'),
       color: 'text-accent',
@@ -48,24 +51,10 @@ export function BerandaPage() {
   ];
 
   const STEPS = [
-    { icon: Upload, label: t('beranda.step1Label'), desc: t('beranda.step1Desc') },
+    { icon: Pen, label: t('beranda.step1Label'), desc: t('beranda.step1Desc') },
     { icon: Cpu, label: t('beranda.step2Label'), desc: t('beranda.step2Desc') },
     { icon: Wrench, label: t('beranda.step3Label'), desc: t('beranda.step3Desc') },
   ];
-
-  const GUIDE_SECTIONS = [
-    { icon: guideSections[0].icon, title: t('beranda.guideQuickStart'), items: t('beranda.quickStartItems', { returnObjects: true }) as string[] },
-    { icon: guideSections[1].icon, title: t('beranda.guideUpload'), items: t('beranda.uploadItems', { returnObjects: true }) as string[] },
-    { icon: guideSections[2].icon, title: t('beranda.guideResults'), items: t('beranda.resultsItems', { returnObjects: true }) as string[] },
-    { icon: guideSections[3].icon, title: t('beranda.guideTips'), items: t('beranda.tipsItems', { returnObjects: true }) as string[] },
-  ];
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   return (
     <div className="min-h-full pb-20">
@@ -90,7 +79,13 @@ export function BerandaPage() {
                 </p>
                 <div className="flex items-center gap-3">
                   <motion.button
-                    onClick={() => navigate('/editor')}
+                    onClick={async () => {
+                      if (!activeProvider.apiKey) {
+                        showApiKeyNotification();
+                      } else {
+                        navigate('/editor');
+                      }
+                    }}
                     className="px-6 py-2.5 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
@@ -98,12 +93,12 @@ export function BerandaPage() {
                     {t('beranda.startAnalyze')}
                   </motion.button>
                   <motion.button
-                    onClick={() => document.getElementById('guide-section')?.scrollIntoView({ behavior: 'smooth' })}
+                    onClick={() => document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' })}
                     className="px-6 py-2.5 text-sm font-medium rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                   >
-                    {t('beranda.viewGuides')}
+                    {t('beranda.viewFaq')}
                   </motion.button>
                 </div>
               </div>
@@ -221,65 +216,66 @@ export function BerandaPage() {
         </FadeInStagger>
       </div>
 
-      <div id="guide-section" className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
+      <div id="faq-section" className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
         <FadeIn>
           <div className="text-center mb-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t('beranda.guide')}</h2>
-            <p className="text-sm text-muted-foreground mt-2">{t('beranda.guideDesc')}</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t('beranda.faqTitle')}</h2>
+            <p className="text-sm text-muted-foreground mt-2">{t('beranda.faqDesc')}</p>
           </div>
         </FadeIn>
         <FadeIn delay={0.1}>
-          <div className="space-y-3">
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-              {GUIDE_SECTIONS.map((section, i) => {
-                const Icon = section.icon;
-                const isOpen = isMobile ? openGuide === i : true;
-                return (
-                  <motion.div
-                    key={i}
-                    className={`rounded-xl border bg-card overflow-hidden ${isOpen ? 'border-accent/30' : 'border-border'} hover:border-accent/30 hover:bg-accent/5 transition-[border-color,background-color] duration-200`}
+          <div className="space-y-2">
+            {faqItems.map((item, i) => {
+              const isOpen = openFaq === i;
+              return (
+                <div
+                  key={i}
+                  className="rounded-xl border border-border bg-card overflow-hidden"
+                >
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer hover:bg-muted/50 transition-colors"
                   >
-                    <div
-                      onClick={isMobile ? () => setOpenGuide(isOpen ? null : i) : undefined}
-                      className={`w-full flex items-center gap-3 px-4 py-3 ${isMobile ? 'cursor-pointer' : 'cursor-default'}`}
+                    <HelpCircle size={14} className="text-accent shrink-0" />
+                    <span className="text-sm font-medium text-foreground flex-1">{item.q}</span>
+                    <motion.div
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-muted-foreground shrink-0"
                     >
-                      <div className="p-1.5 rounded-lg bg-accent/10 shrink-0">
-                        <Icon size={14} className="text-accent" />
-                      </div>
-                      <span className="text-sm font-semibold text-foreground flex-1 text-left">{section.title}</span>
+                      <ChevronDown size={14} />
+                    </motion.div>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
                       <motion.div
-                        animate={{ rotate: isOpen ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="text-muted-foreground shrink-0 sm:hidden"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                       >
-                        <ChevronDown size={14} />
+                        <div className="px-4 pb-3 pt-1 border-t border-border">
+                          <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+                            {item.a}
+                          </p>
+                          {item.link && (
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 mt-2 text-[11px] font-medium text-accent hover:underline"
+                            >
+                              <ExternalLink size={10} />
+                              {item.link}
+                            </a>
+                          )}
+                        </div>
                       </motion.div>
-                    </div>
-                    <AnimatePresence initial={false}>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                        >
-                          <div className="px-4 pb-3 pt-1 border-t border-border">
-                            <ul className="mt-2 space-y-1.5">
-                              {section.items.map((item, j) => (
-                                <li key={j} className="flex items-start text-xs text-muted-foreground leading-relaxed">
-                                  <span className="w-5 shrink-0 text-accent text-center">•</span>
-                                  <span className="flex-1">{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                );
-              })}
-            </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </div>
         </FadeIn>
       </div>

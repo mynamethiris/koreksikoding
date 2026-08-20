@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ChevronRight, BookOpen, Lock, CheckCircle, AlertCircle } from 'lucide-react';
@@ -8,6 +9,11 @@ import { getQuizStatus, isGuideUnlocked } from '@/lib/progressStorage';
 
 export function GuidesPage() {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const main = document.querySelector('main');
+    if (main) main.scrollTop = 0;
+  }, []);
 
   return (
     <div className="min-h-full pb-24 sm:pb-6">

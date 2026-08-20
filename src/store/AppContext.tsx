@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EditorFile, AnalysisResult, Theme, AIProvider, HistoryEntry, Language } from '@/types';
 import { analyzeCode, parseAnalysisResponse, canAnalyze, recordAnalysis, sanitizeCode, sanitizeFixedCode, getRateLimitRemaining, ApiError } from '@/lib/api';
 import { decryptApiKey } from '@/lib/crypto';
 import { db } from '@/lib/db';
 import toast from 'react-hot-toast';
+import { showApiKeyNotification } from '@/components/ApiKeyNotification';
 
 interface AppState {
   files: EditorFile[];
@@ -26,10 +27,12 @@ interface AppContextType extends AppState {
   updateFileContent: (id: string, content: string) => void;
   updateFileName: (id: string, name: string) => void;
   updateFileLanguage: (id: string, language: Language) => void;
+  setManualLanguage: (id: string, language: Language) => void;
   setActiveFileId: (id: string) => void;
   setAnalysisResult: (result: AnalysisResult | null) => void;
   setIsAnalyzing: (v: boolean) => void;
   setAnalysisError: (v: string | null) => void;
+  analysisErrorType: 'modelUnavailable' | 'noApiKey' | null;
   clearAnalysisError: () => void;
   runAnalysis: () => Promise<void>;
   toggleTheme: () => void;
@@ -40,7 +43,9 @@ interface AppContextType extends AppState {
   clearAll: () => void;
 }
 
-const EDITOR_STATE_KEY = 'kk_editor_state';
+const EDITOR_STATE_KEY = 'kk_koreksi_editor_state';
+const EDITOR_LEGACY_KEY = 'kk_editor_state';
+const EDITOR_LANG_KEY = 'kk_editor_language';
 const ANALYSIS_STATE_KEY = 'kk_analysis_state';
 const CUSTOM_PROMPT_KEY = 'kk_custom_prompt';
 
@@ -50,11 +55,31 @@ function loadEditorState(): { files: EditorFile[]; activeFileId: string | null }
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed.files) && parsed.files.length > 0) {
-        return { files: parsed.files, activeFileId: parsed.activeFileId };
+        return {
+          files: parsed.files.map((f: any) => ({ ...f, manualLanguage: !!f.manualLanguage })),
+          activeFileId: parsed.activeFileId,
+        };
+      }
+    }
+  } catch { }
+  try {
+    const raw = localStorage.getItem(EDITOR_LEGACY_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.files) && parsed.files.length > 0) {
+        const files = parsed.files.map((f: any) => ({ ...f, manualLanguage: !!f.manualLanguage }));
+        localStorage.setItem(EDITOR_STATE_KEY, JSON.stringify({ files, activeFileId: parsed.activeFileId }));
+        localStorage.removeItem(EDITOR_LEGACY_KEY);
+        return { files, activeFileId: parsed.activeFileId };
       }
     }
   } catch { }
   return { files: [], activeFileId: null };
+}
+
+function defaultEditorFile(): EditorFile {
+  const lang = (localStorage.getItem(EDITOR_LANG_KEY) as Language) || 'javascript';
+  return { id: crypto.randomUUID(), name: 'untitled', language: lang, content: '' };
 }
 
 function loadAnalysisState(): AnalysisResult | null {
@@ -83,45 +108,64 @@ function loadAnalysisState(): AnalysisResult | null {
   return null;
 }
 
+function buildAnalysisResult(
+  parsed: Record<string, unknown>,
+  tokenUsage: { input: number; output: number; model?: string } | undefined,
+  fallbackCode: string,
+): AnalysisResult {
+  return {
+    errors: (parsed.errors as any[]) || [],
+    warnings: (parsed.warnings as any[]) || [],
+    suggestions: (parsed.suggestions as any[]) || [],
+    score: Math.max(0, Math.min(100, (parsed.score as number) || 0)),
+    fixedCode: sanitizeFixedCode((parsed.fixedCode as string) || '') || fallbackCode,
+    changes: (parsed.changes as string[]) || [],
+    explanation: (parsed.explanation as any[]) || [],
+    concepts: (parsed.concepts as any[]) || [],
+    exercise: (parsed.exercise as any) || null,
+    tokenUsage,
+    refactoringScore: parsed.refactoringScore as any || undefined,
+    vulnerabilities: (parsed.vulnerabilities as any[]) || undefined,
+    duplications: (parsed.duplications as any[]) || undefined,
+  };
+}
+
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const saved = loadEditorState();
-  const [files, setFilesState] = useState<EditorFile[]>(saved.files);
+  const [files, setFilesState] = useState<EditorFile[]>(() => saved.files.length ? saved.files : [defaultEditorFile()]);
   const [activeFileId, setActiveFileId] = useState<string | null>(saved.activeFileId);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(() => loadAnalysisState());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisErrorType, setAnalysisErrorType] = useState<'modelUnavailable' | 'noApiKey' | null>(null);
   const [theme, setTheme] = useState<Theme>(() => {
     return (localStorage.getItem('kk_theme') as Theme) || 'dark';
   });
   const [providers, setProvidersState] = useState<AIProvider[]>(() => {
+    const defaultGemini = { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true, recommended: ['gemini-2.0-flash', 'gemini-2.0-flash-thinking-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'] };
+    const defaultGroq = { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'groq/compound-mini', apiKey: '', isDefault: true, recommended: ['groq/compound-mini', 'qwen/qwen3.6-27b', 'openai/gpt-oss-120b'] };
+    const defaults = [defaultGemini, defaultGroq];
     try {
       const stored = localStorage.getItem('kk_providers');
       if (stored) {
         const parsed = JSON.parse(stored);
-        const defaults = [
-          { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', model: 'gemini-3.6-flash', apiKey: '', isDefault: true },
-          { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen3-32b', apiKey: '', isDefault: true },
-        ];
         return defaults.map((dp) => {
           const custom = parsed.find((p: any) => p.id === dp.id);
           return custom ? { ...dp, ...custom, apiKey: custom.apiKey } : dp;
         }).concat(parsed.filter((p: any) => !p.isDefault));
       }
     } catch { }
-    return [
-      { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', model: 'gemini-3.6-flash', apiKey: '', isDefault: true },
-      { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen3-32b', apiKey: '', isDefault: true },
-    ];
+    return defaults;
   });
   const [activeProvider, setActiveProviderState] = useState<AIProvider>(() => {
     try {
       const activeId = localStorage.getItem('kk_active_provider') || 'gemini';
       const stored = localStorage.getItem('kk_providers');
       const defaults: AIProvider[] = [
-        { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', model: 'gemini-3.6-flash', apiKey: '', isDefault: true },
-        { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen3-32b', apiKey: '', isDefault: true },
+        { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true, recommended: ['gemini-2.0-flash', 'gemini-2.0-flash-thinking-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'] },
+        { id: 'groq', name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'groq/compound-mini', apiKey: '', isDefault: true, recommended: ['groq/compound-mini', 'qwen/qwen3.6-27b', 'openai/gpt-oss-120b'] },
       ];
       if (stored) {
         const parsed = JSON.parse(stored);
@@ -133,7 +177,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return defaults[0];
     } catch {
-      return { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent', model: 'gemini-3.6-flash', apiKey: '', isDefault: true };
+      return { id: 'gemini', name: 'Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash', apiKey: '', isDefault: true, recommended: ['gemini-2.0-flash', 'gemini-2.0-flash-thinking-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'] };
     }
   });
   const [activeResultTab, setActiveResultTab] = useState(() => {
@@ -144,26 +188,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
 
   const { t } = useTranslation();
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
+    try {
       localStorage.setItem(EDITOR_STATE_KEY, JSON.stringify({ files, activeFileId }));
-    }, 500);
-    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+    } catch { }
   }, [files, activeFileId]);
 
-  const saveAnalysisTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (saveAnalysisTimerRef.current) clearTimeout(saveAnalysisTimerRef.current);
-    saveAnalysisTimerRef.current = setTimeout(() => {
+    const flush = () => {
+      try { localStorage.setItem(EDITOR_STATE_KEY, JSON.stringify({ files, activeFileId })); } catch { }
+    };
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
+  }, [files, activeFileId]);
+
+  useEffect(() => {
+    try {
       if (analysisResult) {
         localStorage.setItem(ANALYSIS_STATE_KEY, JSON.stringify(analysisResult));
       } else {
         localStorage.removeItem(ANALYSIS_STATE_KEY);
       }
-    }, 300);
-    return () => { if (saveAnalysisTimerRef.current) clearTimeout(saveAnalysisTimerRef.current); };
+    } catch { }
   }, [analysisResult]);
 
   useEffect(() => { localStorage.setItem('kk_active_result_tab', activeResultTab); }, [activeResultTab]);
@@ -230,6 +277,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateFileLanguage = useCallback((id: string, language: Language) => {
     setFilesState((prev) => prev.map((f) => (f.id === id ? { ...f, language } : f)));
+    try { localStorage.setItem(EDITOR_LANG_KEY, language); } catch { }
+  }, []);
+
+  const setManualLanguage = useCallback((id: string, language: Language) => {
+    setFilesState((prev) => prev.map((f) => (f.id === id ? { ...f, language, manualLanguage: true } : f)));
+    try { localStorage.setItem(EDITOR_LANG_KEY, language); } catch { }
   }, []);
 
   const toggleTheme = useCallback(() => {
@@ -262,8 +315,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
     if (!activeProvider.apiKey) {
-      toast.error(t('analysis.noApiKey'));
-      return;
+      const fallback = providers.find((p) => p.id !== activeProvider.id && p.apiKey);
+      if (fallback) {
+        setActiveProviderState(fallback);
+        localStorage.setItem('kk_active_provider', fallback.id);
+      } else {
+        setAnalysisErrorType('noApiKey');
+        showApiKeyNotification();
+        return;
+      }
     }
     if (!canAnalyze()) {
       toast.error(t('analysis.rateLimit', { remaining: getRateLimitRemaining() }));
@@ -279,21 +339,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { text: rawResponse, tokenUsage } = await analyzeCode(sanitized, file.language, activeProvider);
       const parsed = parseAnalysisResponse(rawResponse) as Record<string, unknown>;
 
-      const result: AnalysisResult = {
-        errors: (parsed.errors as any[]) || [],
-        warnings: (parsed.warnings as any[]) || [],
-        suggestions: (parsed.suggestions as any[]) || [],
-        score: Math.max(0, Math.min(100, (parsed.score as number) || 0)),
-        fixedCode: sanitizeFixedCode((parsed.fixedCode as string) || '') || file.content,
-        changes: (parsed.changes as string[]) || [],
-        explanation: (parsed.explanation as any[]) || [],
-        concepts: (parsed.concepts as any[]) || [],
-        exercise: (parsed.exercise as any) || null,
-        tokenUsage,
-        refactoringScore: parsed.refactoringScore as any || undefined,
-        vulnerabilities: (parsed.vulnerabilities as any[]) || undefined,
-        duplications: (parsed.duplications as any[]) || undefined,
-      };
+      const result = buildAnalysisResult(parsed, tokenUsage, file.content);
 
       setAnalysisResult(result);
       recordAnalysis();
@@ -318,21 +364,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast.success(t('analysis.analysisDone'));
     } catch (err) {
       let msg: string;
+      let isModelUnavailable = false;
       if (err instanceof ApiError) {
         msg = err.message;
+        isModelUnavailable = err.isModelUnavailable;
       } else if (err instanceof Error) {
         msg = err.message;
       } else {
         msg = t('analysis.errorUnknown', { error: String(err) });
       }
+
+      const shouldAutoSwitch = isModelUnavailable || (err instanceof ApiError && [401, 403, 503].includes(err.status));
+      if (shouldAutoSwitch) {
+        const fallback = providers.find((p) => p.id !== activeProvider.id && p.apiKey);
+        if (fallback) {
+          setActiveProviderState(fallback);
+          localStorage.setItem('kk_active_provider', fallback.id);
+          try {
+            const sanitized = sanitizeCode(file.content);
+            const { text: rawResponse, tokenUsage } = await analyzeCode(sanitized, file.language, fallback);
+            const parsed = parseAnalysisResponse(rawResponse) as Record<string, unknown>;
+            const result = buildAnalysisResult(parsed, tokenUsage, file.content);
+            setAnalysisResult(result);
+            recordAnalysis();
+            try {
+              const entry: HistoryEntry = {
+                id: crypto.randomUUID(),
+                code: file.content,
+                language: file.language,
+                timestamp: Date.now(),
+                score: result.score,
+                errorCount: result.errors.length,
+                warningCount: result.warnings.length,
+                suggestionCount: result.suggestions.length,
+                result,
+              };
+              await db.addHistory(entry);
+            } catch { }
+            toast.success(t('analysis.autoSwitched', { provider: fallback.name }));
+            setIsAnalyzing(false);
+            return;
+          } catch { }
+        }
+      }
+
       setAnalysisError(msg);
+      setAnalysisErrorType(isModelUnavailable ? 'modelUnavailable' : null);
       toast.error(t('analysis.analysisFailed', { error: msg }));
     } finally {
       setIsAnalyzing(false);
     }
   }, [files, activeFileId, activeProvider, t]);
 
-  const clearAnalysisError = useCallback(() => setAnalysisError(null), []);
+  const clearAnalysisError = useCallback(() => { setAnalysisError(null); setAnalysisErrorType(null); }, []);
 
   const clearAll = useCallback(() => {
     setFilesState([]);
@@ -350,6 +434,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         analysisResult,
         isAnalyzing,
         analysisError,
+        analysisErrorType,
         setAnalysisError,
         clearAnalysisError,
         runAnalysis,
@@ -364,6 +449,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateFileContent,
         updateFileName,
         updateFileLanguage,
+        setManualLanguage,
         setActiveFileId,
         setAnalysisResult,
         setIsAnalyzing,

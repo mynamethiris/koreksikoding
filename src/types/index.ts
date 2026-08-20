@@ -29,6 +29,7 @@ export interface EditorFile {
   language: Language;
   content: string;
   path?: string;
+  manualLanguage?: boolean;
 }
 
 export interface AnalysisError {
@@ -123,6 +124,7 @@ export interface AIProvider {
   apiKey: string;
   isDefault?: boolean;
   availableModels?: string[];
+  recommended?: string[];
 }
 
 export interface HistoryEntry {

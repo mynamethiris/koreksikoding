@@ -1,5 +1,6 @@
-import { useState, useRef, Component, type ReactNode } from 'react';
-import { AlertTriangle, AlertCircle, Info, CheckCircle, ChevronDown, Copy, Check, Wrench, Lightbulb, GraduationCap, Download, ExternalLink, Shield, RefreshCw } from 'lucide-react';
+import { useState, Component, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, AlertCircle, Info, CheckCircle, ChevronDown, Copy, Check, Wrench, Lightbulb, Download, ExternalLink, Shield, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
@@ -67,13 +68,18 @@ function ErrorItem({ item, type, index }: { item: { line: number; message: strin
       transition={{ duration: 0.3, delay: index * 0.03, ease: [0.16, 1, 0.3, 1] }}
     >
       <button
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => {
+          setExpanded(!expanded);
+          window.dispatchEvent(new CustomEvent('korek:scrollToLine', { detail: { line: item.line } }));
+        }}
         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted transition-colors"
       >
         <div className={`p-1 rounded-md ${bg}`}>
           <Icon size={11} className={text} />
         </div>
-        <span className="text-[9px] font-mono text-muted-foreground shrink-0">{t('analysis.line')} {item.line}</span>
+        <span className="text-[9px] font-mono text-muted-foreground shrink-0">
+          {t('analysis.line')} {item.line}
+        </span>
         <span className="text-xs flex-1 text-foreground truncate">{item.message}</span>
         <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-muted-foreground">
           <ChevronDown size={14} />
@@ -132,24 +138,6 @@ function CodeBlock({ code, language }: { code: string; language?: string }) {
         <code>{code}</code>
       </pre>
     </div>
-  );
-}
-
-function CopyBtn({ text, label }: { text: string; label: string }) {
-  const [copied, setCopied] = useState(false);
-  const { t } = useTranslation();
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success(`${label} ${t('analysis.copied').toLowerCase()}!`);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <motion.button onClick={handleCopy} className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-      {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
-      {copied ? t('analysis.copied') : t('analysis.copy')}
-    </motion.button>
   );
 }
 
@@ -229,37 +217,11 @@ function PenjelasanTab({ result }: { result: NonNullable<ReturnType<typeof useAp
   );
 }
 
-function BelajarTab({ result }: { result: NonNullable<ReturnType<typeof useApp>['analysisResult']> }) {
-  const { t } = useTranslation();
-  if (result.concepts.length === 0) return <EmptyState icon={<GraduationCap size={24} />} title={t('analysis.noConcepts')} />;
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 items-start">
-        {result.concepts.map((concept, i) => (
-          <motion.div key={i} className="relative border border-border rounded-xl overflow-hidden"
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: i * 0.08 }}>
-            <div className="flex items-center gap-3 px-4 py-3 bg-accent/5 border-b border-border">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-accent text-accent-foreground text-[10px] font-bold shrink-0">{i + 1}</span>
-              <h4 className="text-sm font-semibold text-foreground">{concept.title}</h4>
-            </div>
-            <div className="px-4 py-3 space-y-2">
-              <p className="text-xs text-muted-foreground leading-relaxed">{concept.summary}</p>
-              <details className="group">
-                <summary className="text-xs font-medium text-accent cursor-pointer hover:underline">{t('analysis.learnMore')}</summary>
-                <div className="mt-2 p-3 rounded-lg bg-muted text-xs text-muted-foreground leading-relaxed">{concept.content}</div>
-              </details>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function AnalysisPanel() {
   const { t } = useTranslation();
-  const { analysisResult, isAnalyzing, analysisError, activeResultTab, setActiveResultTab, files, activeFileId, activeProvider, runAnalysis } = useApp();
+  const navigate = useNavigate();
+  const { analysisResult, isAnalyzing, analysisError, analysisErrorType, activeResultTab, setActiveResultTab, files, activeFileId, activeProvider, runAnalysis } = useApp();
   const showRefresh = useHasExceeded(isAnalyzing);
   const result = analysisResult;
   const activeFile = files.find((f) => f.id === activeFileId);
@@ -340,7 +302,11 @@ export function AnalysisPanel() {
   };
 
   if (analysisError) {
-    return <AsyncError error={analysisError} onRetry={runAnalysis} />;
+    return <AsyncError
+      error={analysisError}
+      onRetry={runAnalysis}
+      onSwitchProvider={analysisErrorType === 'modelUnavailable' ? () => navigate('/settings') : undefined}
+    />;
   }
 
   if (isAnalyzing) {
@@ -399,8 +365,10 @@ export function AnalysisPanel() {
             const Icon = tab.Icon;
             return (
               <button key={tab.id} onClick={() => setActiveResultTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors whitespace-nowrap ${
-                  activeResultTab === tab.id ? 'text-accent' : 'text-muted-foreground hover:text-foreground'
+                className={`relative flex items-center gap-1.5 px-3 py-2.5 text-xs transition-colors whitespace-nowrap ${
+                  activeResultTab === tab.id
+                    ? 'text-accent font-semibold bg-accent/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
                 }`}>
                 <Icon size={13} />
                 <span className="hidden sm:inline">{tab.label}</span>

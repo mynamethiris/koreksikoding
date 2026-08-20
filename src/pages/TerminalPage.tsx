@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
 import { analyzeCode, getTerminalErrorPrompt, canAnalyze, recordAnalysis, sanitizeFixedCode, getCommunityLinks, parseAnalysisResponse, ApiError, getRateLimitRemaining } from '@/lib/api';
 import { db } from '@/lib/db';
+import { showApiKeyNotification } from '@/components/ApiKeyNotification';
 import { AsyncError, AsyncLoading } from '@/components/AsyncStatus';
 import { FadeIn } from '@/components/motion';
 import toast from 'react-hot-toast';
@@ -23,7 +24,7 @@ export function TerminalPage() {
     if (!trimmed) return;
 
     if (!activeProvider.apiKey) {
-      toast.error(t('analysis.noApiKey'));
+      showApiKeyNotification();
       return;
     }
 

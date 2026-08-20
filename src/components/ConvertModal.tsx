@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
 import { analyzeCode, getConvertPrompt, canAnalyze, getRateLimitRemaining, ApiError } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { showApiKeyNotification } from '@/components/ApiKeyNotification';
 import type { Language } from '@/types';
 
 const TARGET_LANGUAGES: { id: Language; label: string }[] = [
@@ -109,7 +110,7 @@ export function ConvertModal({ open, onClose }: ConvertModalProps) {
       return;
     }
     if (!activeProvider.apiKey) {
-      toast.error(t('analysis.noApiKey'));
+      showApiKeyNotification();
       return;
     }
 
@@ -291,8 +292,10 @@ export function ConvertModal({ open, onClose }: ConvertModalProps) {
                       <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`relative px-3 py-2 text-[11px] sm:text-xs font-medium transition-colors ${
-                          activeTab === tab ? 'text-accent' : 'text-muted-foreground hover:text-foreground'
+                        className={`relative px-3 py-2 text-[11px] sm:text-xs transition-colors ${
+                          activeTab === tab
+                            ? 'text-accent font-semibold bg-accent/10'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
                         }`}
                       >
                         {tab === 'code' ? (i18n.language === 'en' ? 'Code' : 'Kode') : tab === 'diff' ? (i18n.language === 'en' ? 'Diff' : 'Perbedaan') : (i18n.language === 'en' ? 'Details' : 'Detail')}

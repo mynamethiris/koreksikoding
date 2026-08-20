@@ -135,7 +135,10 @@ export function Quiz({ quizData, onComplete, completed }: QuizProps) {
                           disabled={passed || isCompletedAndPassed}
                           className="shrink-0"
                         />
-                        <span className={labelClass}>
+                        <span className={`flex items-center gap-1.5 ${labelClass}`}>
+                          <span className="w-5 h-5 flex items-center justify-center rounded-md bg-muted text-[9px] font-mono font-bold text-muted-foreground">
+                            {String.fromCharCode(65 + oi)}
+                          </span>
                           {opt}
                           <span className="text-muted-foreground/70">{suffix}</span>
                         </span>

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Settings, Eye, EyeOff, Check, Trash2, Users, GraduationCap, Crown, User, Zap, ChevronDown } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Settings, Eye, EyeOff, Check, Trash2, Users, GraduationCap, Crown, User, Zap, ChevronDown, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
@@ -9,12 +9,13 @@ import { FadeIn } from '@/components/motion';
 import { ConfirmModal } from '@/components/Modal';
 import type { AIProvider, TeamMember } from '@/types';
 import toast from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 
-function buildEndpoint(providerName: string, model: string): string {
+function buildEndpoint(providerName: string, model: string, currentEndpoint: string): string {
   if (providerName === 'Gemini') {
     return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   }
-  return `https://api.groq.com/openai/v1/chat/completions`;
+  return currentEndpoint;
 }
 
 function MemberCard({ member, index }: { member: TeamMember; index: number }) {
@@ -78,6 +79,20 @@ export function SettingsPage() {
     setTimeout(() => setFlashId(null), 600);
   }, []);
 
+  const [searchParams] = useSearchParams();
+  const highlightProvider = searchParams.get('highlight') === 'provider';
+
+  useEffect(() => {
+    if (highlightProvider) {
+      const firstDefaultProvider = providers.find((p) => p.isDefault);
+      if (firstDefaultProvider) {
+        triggerFlash(firstDefaultProvider.id);
+        const element = document.getElementById(`provider-${firstDefaultProvider.id}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [highlightProvider, providers, triggerFlash]);
+
   const toggleKey = (id: string) => setShowKeys((p) => ({ ...p, [id]: !p[id] }));
 
   const updateApiKey = (providerId: string, key: string) => {
@@ -106,7 +121,7 @@ export function SettingsPage() {
 
   const handleModelChange = (providerId: string, newModel: string) => {
     const updated = providers.map((p) =>
-      p.id === providerId ? { ...p, model: newModel, endpoint: buildEndpoint(p.name, newModel) } : p,
+      p.id === providerId ? { ...p, model: newModel, endpoint: buildEndpoint(p.name, newModel, p.endpoint) } : p,
     );
     setProviders(updated);
     saveProviders(updated);
@@ -160,16 +175,13 @@ export function SettingsPage() {
   };
 
   const handleClearAllData = async () => {
+    try { await db.deleteAll(); } catch { }
     try {
-      await db.clearHistory();
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        localStorage.removeItem(localStorage.key(i)!);
+      }
     } catch { }
-    try {
-      await db.clearChallengeHistory();
-    } catch { }
-    try {
-      const keys = Object.keys(localStorage);
-      for (const key of keys) localStorage.removeItem(key);
-    } catch { }
+    try { sessionStorage.clear(); } catch { }
     toast.success(t('settings.dataCleared'));
     window.location.reload();
   };
@@ -195,7 +207,7 @@ export function SettingsPage() {
 
           <div className="space-y-3">
             {providers.map((p) => (
-              <motion.div key={p.id}
+              <motion.div key={p.id} id={`provider-${p.id}`}
                 className={`relative p-4 rounded-xl border cursor-pointer transition-colors duration-200 ${
                   activeProvider.id === p.id
                     ? 'border-accent/30'
@@ -231,8 +243,7 @@ export function SettingsPage() {
                   </div>
                 </div>
 
-                {(p.id === 'gemini' || p.id === 'groq') && (
-                  <div className="mb-3">
+                <div className="mb-3">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -290,16 +301,46 @@ export function SettingsPage() {
                         </motion.div>
                       )}
                     </AnimatePresence>
+                    {p.recommended && p.recommended.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                        <span className="text-[9px] text-muted-foreground">{t('settings.recommendedModels')}:</span>
+                        {p.recommended.map((m) => (
+                          <button
+                            key={m}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleModelChange(p.id, m);
+                            }}
+                            className={`text-[9px] px-2 py-0.5 rounded-md border transition-colors text-center min-w-[4rem] ${
+                              p.model === m
+                                ? 'border-success/30 bg-success/10 text-success font-medium'
+                                : 'border-border text-muted-foreground hover:bg-muted'
+                            }`}
+                          >
+                            {m}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
                 <div className="relative flex items-center gap-2">
                   <input
                     id={`api-key-${p.id}`}
                     name={`api-key-${p.id}`}
                     type={showKeys[p.id] ? 'text' : 'password'}
-                    autoComplete="one-time-code"
+                    autoComplete="new-password"
+                    inputMode="text"
+                    enterKeyHint="done"
                     value={p.apiKey}
                     onChange={(e) => updateApiKey(p.id, e.target.value)}
+                    onPaste={(e) => {
+                      const pasted = e.clipboardData.getData('text');
+                      if (pasted && pasted.trim().length >= 20) {
+                        e.preventDefault();
+                        updateApiKey(p.id, pasted.trim());
+                        toast.success(t('settings.pasted'));
+                      }
+                    }}
                     placeholder={t('settings.enterApiKey')}
                     onClick={(e) => e.stopPropagation()}
                     className="flex-1 px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none transition-all"
@@ -330,6 +371,17 @@ export function SettingsPage() {
                     </div>
                   </motion.button>
                 </div>
+                {(p.id === 'gemini' || p.id === 'groq') && (
+                  <a
+                    href={p.id === 'gemini' ? 'https://aistudio.google.com/app/apikey' : 'https://console.groq.com/keys'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-1 text-xs text-accent hover:underline font-medium"
+                  >
+                    <ExternalLink size={10} />
+                    {t('settings.getApiKey')}
+                  </a>
+                )}
                 {p.endpoint && (
                   <div className="relative mt-2">
                     <input
@@ -379,7 +431,9 @@ export function SettingsPage() {
                 id="custom-provider-apikey"
                 name="custom-provider-apikey"
                 type="password"
-                autoComplete="one-time-code"
+                autoComplete="new-password"
+                inputMode="text"
+                enterKeyHint="done"
                 value={customForm.apiKey}
                 onChange={(e) => setCustomForm((p) => ({ ...p, apiKey: e.target.value }))}
                 placeholder={t('settings.apiKey')}
@@ -457,9 +511,15 @@ export function SettingsPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {TEAM.map((member, i) => (
-              <MemberCard key={member.name} member={member} index={i} />
-            ))}
+            {TEAM.map((member, i) => {
+              const isLeader = member.role.toLowerCase().includes('ketua') || member.role.toLowerCase().includes('leader');
+              const orderClass = isLeader ? 'sm:order-2' : i === 0 ? 'sm:order-1' : 'sm:order-3';
+              return (
+                <div key={member.name} className={orderClass}>
+                  <MemberCard member={member} index={i} />
+                </div>
+              );
+            })}
           </div>
 
           <a href={ADVISOR.github} target="_blank" rel="noopener noreferrer" className="block">
