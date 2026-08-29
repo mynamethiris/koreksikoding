@@ -139,7 +139,7 @@ function parseMarkdownToSections(md: string, lang: string): { summary: string; s
         currentOptions = [];
         answerIndex = -1;
       }
-      const qMatch = line.match(/^### \d+\.\s*(.+)$/);
+      const qMatch = line.match(/^### \d+\.\s*(.+?)(\r|$)/);
       if (qMatch) {
         currentQuestion = {
           id: `q${quizQuestions.length + 1}`,
@@ -151,11 +151,11 @@ function parseMarkdownToSections(md: string, lang: string): { summary: string; s
       continue;
     }
 
-    if (line.match(/^- \[[ x]\]/) && inQuiz) {
+    if (line.startsWith('- [') && inQuiz) {
       const checked = line.includes('[x]');
-      const optMatch = line.match(/^- \[[ x]\]\s*(.+)$/);
-      if (optMatch) {
-        currentOptions.push(optMatch[1].trim());
+      const optionText = line.slice(line.indexOf(']') + 1).trim();
+      if (optionText) {
+        currentOptions.push(optionText);
         if (checked) {
           answerIndex = currentOptions.length - 1;
         }

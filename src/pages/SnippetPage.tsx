@@ -1,55 +1,107 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Code2, Copy, Check, ArrowLeft, Share2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Code2, Copy, Check, ArrowLeft, FileCode2, Clock, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { getLanguageExtension } from '@/lib/api';
+import { getLanguageExtension, detectLanguageFromContent } from '@/lib/api';
 import { lightTheme, darkTheme } from '@/lib/editor-themes';
 import CodeMirror from '@uiw/react-codemirror';
 import toast from 'react-hot-toast';
 import type { Language } from '@/types';
 
-const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const LEGACY_STORAGE_PREFIX = 'kk_share_';
 
 interface SnippetData {
   code: string;
   lang: string;
-  ts: number;
 }
 
-function decodeSnippet(hash: string): SnippetData | null {
-  try {
-    if (!hash.startsWith('#snippet=')) return null;
-    const encoded = hash.slice(9);
-    const data = JSON.parse(decodeURIComponent(escape(atob(encoded))));
-    if (!data.code || typeof data.code !== 'string') return null;
-    return { code: data.code, lang: data.lang || 'javascript', ts: data.ts || 0 };
-  } catch {
-    return null;
-  }
+function getLangLabel(lang: string): string {
+  const map: Record<string, string> = {
+    javascript: 'JavaScript',
+    typescript: 'TypeScript',
+    python: 'Python',
+    java: 'Java',
+    c: 'C',
+    cpp: 'C++',
+    go: 'Go',
+    rust: 'Rust',
+    php: 'PHP',
+    ruby: 'Ruby',
+    jsx: 'JSX',
+    tsx: 'TSX',
+    html: 'HTML',
+    css: 'CSS',
+    sql: 'SQL',
+    json: 'JSON',
+    markdown: 'Markdown',
+    yaml: 'YAML',
+    shell: 'Shell',
+  };
+  return map[lang] || lang.toUpperCase();
 }
 
 export function SnippetPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { theme } = useApp();
+  const [searchParams] = useSearchParams();
+  const { theme, setFiles } = useApp();
   const [snippet, setSnippet] = useState<SnippetData | null>(null);
   const [copied, setCopied] = useState(false);
-  const [expired, setExpired] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    const data = decodeSnippet(window.location.hash);
-    if (!data) {
-      setExpired(true);
-      return;
+  const loadLegacy = useCallback((key: string): SnippetData | null => {
+    try {
+      const raw = localStorage.getItem(LEGACY_STORAGE_PREFIX + key);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data.code || typeof data.code !== 'string') return null;
+      if (Date.now() - data.ts > DAY_MS) {
+        localStorage.removeItem(LEGACY_STORAGE_PREFIX + key);
+        return null;
+      }
+      return { code: data.code, lang: data.lang || 'javascript' };
+    } catch {
+      return null;
     }
-    if (Date.now() - data.ts > TWO_HOURS_MS) {
-      setExpired(true);
-      return;
-    }
-    setSnippet(data);
-    window.location.hash = '';
   }, []);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- data fetching effect
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id) {
+      fetch(`/api/paste/${id}`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Not found');
+          return res.text();
+        })
+        .then((code) => {
+          const lang = detectLanguageFromContent(code);
+          setSnippet({ code, lang });
+          setLoading(false);
+        })
+        .catch(() => {
+          setError(true);
+          setLoading(false);
+        });
+      return;
+    }
+
+    const key = searchParams.get('key');
+    if (key) {
+      const data = loadLegacy(key);
+      if (data) {
+        setSnippet(data);
+        setLoading(false);
+        return;
+      }
+    }
+
+    setError(true);
+    setLoading(false);
+  }, [searchParams, loadLegacy, setSnippet, setLoading, setError]);
 
   const handleCopy = useCallback(async () => {
     if (!snippet) return;
@@ -63,31 +115,89 @@ export function SnippetPage() {
     }
   }, [snippet, t, i18n.language]);
 
-  const handleStop = useCallback(() => {
-    setSnippet(null);
-    window.location.hash = '';
-    navigate('/');
-  }, [navigate]);
+  const handleOpenInEditor = useCallback(() => {
+    if (!snippet) return;
+    setFiles([{
+      id: crypto.randomUUID(),
+      name: `snippet.${snippet.lang}`,
+      language: snippet.lang as Language,
+      content: snippet.code,
+    }]);
+    navigate('/editor');
+  }, [snippet, setFiles, navigate]);
 
-  if (expired) {
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100dvh-52px)] gap-4 text-center p-6">
-        <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center text-muted-foreground opacity-80">
-          <Share2 size={28} />
+      <div className="flex flex-col min-h-[calc(100dvh-52px)]">
+        <div className="px-3 sm:px-6 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border bg-card shrink-0">
+          <div className="flex items-center justify-between max-w-6xl mx-auto">
+            <button
+              onClick={() => navigate('/share-code')}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft size={14} />
+              {t('notFound.back')}
+            </button>
+            <div className="p-1.5 rounded-lg bg-accent/10 animate-pulse">
+              <Code2 size={18} className="text-accent" />
+            </div>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-bold text-foreground">{t('share.expired')}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {i18n.language === 'en' ? 'This link is no longer valid or has been stopped.' : 'Link ini sudah tidak berlaku atau telah dihentikan.'}
-          </p>
+
+        <div className="flex-1 min-h-0 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 text-center p-6">
+            <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center animate-pulse">
+              <Code2 size={20} className="text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {i18n.language === 'en' ? 'Loading shared code...' : 'Memuat kode berbagi...'}
+            </p>
+          </div>
         </div>
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          <ArrowLeft size={14} />
-          {t('notFound.back')}
-        </button>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-[calc(100dvh-52px)]">
+        <div className="px-3 sm:px-6 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border bg-card shrink-0">
+          <div className="flex items-center justify-between max-w-6xl mx-auto">
+            <button
+              onClick={() => navigate('/share-code')}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft size={14} />
+              {t('notFound.back')}
+            </button>
+            <div className="p-1.5 rounded-lg bg-accent/10">
+              <Code2 size={18} className="text-accent" />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center p-6 max-w-sm">
+            <div className="w-16 h-16 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center">
+              <FileCode2 size={28} className="text-destructive/60" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground">{t('share.expired')}</h2>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                {i18n.language === 'en'
+                  ? 'This link is no longer valid or has been stopped by the sender.'
+                  : 'Tautan ini sudah tidak berlaku atau telah dihentikan oleh pengirim.'}
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/share-code')}
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <ArrowLeft size={13} />
+              {i18n.language === 'en' ? 'Go to Share' : 'Ke Bagikan'}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -95,54 +205,93 @@ export function SnippetPage() {
   if (!snippet) return null;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-52px)]">
+    <div className="flex flex-col min-h-[calc(100dvh-52px)]">
+      {/* Header */}
       <div className="px-3 sm:px-6 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border bg-card shrink-0">
-        <div className="flex items-center gap-2 max-w-4xl mx-auto mb-2">
-          <div className="p-1.5 rounded-lg bg-accent/10">
-            <Code2 size={18} className="text-accent" />
+        <div className="flex items-center justify-between max-w-6xl mx-auto">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-accent/10">
+              <Code2 size={18} className="text-accent" />
+            </div>
+            <div>
+              <h1 className="text-sm font-bold text-foreground tracking-tight">
+                {t('share.title')}
+              </h1>
+              <p className="text-[10px] text-muted-foreground hidden sm:block">
+                {i18n.language === 'en' ? 'Shared code snippet — valid for 24 hours' : 'Cuplikan kode berbagi — berlaku 24 jam'}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-foreground tracking-tight">{t('share.title')}</h1>
-            <p className="text-[10px] text-muted-foreground">
-              {i18n.language === 'en' ? 'Shared code snippet' : 'Kode berbagi snippet'}
-              <span className="ml-2 font-mono text-foreground/60">{snippet.lang}</span>
-            </p>
+
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent/10 text-accent">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent/60" />
+              {getLangLabel(snippet.lang)}
+            </span>
+            <span className="hidden sm:flex items-center gap-0.5 text-[10px] text-muted-foreground">
+              <Clock size={10} />
+              {i18n.language === 'en' ? 'Expires in 24h' : 'Kadaluarsa 24 jam'}
+            </span>
+            <button
+              onClick={() => navigate('/share-code')}
+              className="flex items-center gap-1 px-2 py-1 text-[10px] rounded-lg border border-border hover:bg-muted text-muted-foreground transition-colors"
+            >
+              <ArrowLeft size={12} />
+              {i18n.language === 'en' ? 'Back' : 'Kembali'}
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto">
-        <CodeMirror
-          value={snippet.code}
-          readOnly
-          editable={false}
-          extensions={[getLanguageExtension(snippet.lang as Language)]}
-          theme={theme === 'dark' ? darkTheme : lightTheme}
-          basicSetup={{
-            lineNumbers: true,
-            highlightActiveLine: false,
-            highlightActiveLineGutter: false,
-            foldGutter: true,
-            bracketMatching: true,
-          }}
-          style={{ height: '100%', fontSize: '13px' }}
-        />
+      {/* Code */}
+      <div className="flex-1 min-h-0 flex items-center justify-center">
+        <div className="max-w-4xl mx-auto w-full p-3 sm:p-6">
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="px-3 py-2 border-b border-border bg-muted shrink-0 flex justify-center">
+              <span className="text-[10px] text-muted-foreground font-mono">
+                {snippet.code.split('\n').length} {i18n.language === 'en' ? 'lines' : 'baris'} · {snippet.code.length.toLocaleString()} {i18n.language === 'en' ? 'chars' : 'karakter'}
+              </span>
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto">
+              <CodeMirror
+                value={snippet.code}
+                readOnly
+                editable={false}
+                extensions={[getLanguageExtension(snippet.lang as Language)]}
+                theme={theme === 'dark' ? darkTheme : lightTheme}
+                basicSetup={{
+                  lineNumbers: true,
+                  highlightActiveLine: false,
+                  highlightActiveLineGutter: false,
+                  foldGutter: true,
+                  bracketMatching: true,
+                }}
+                style={{ height: '100%', minHeight: '300px', fontSize: '13px' }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* Action bar */}
       <div className="px-3 sm:px-6 py-2.5 border-t border-border bg-card shrink-0">
-        <div className="flex items-center gap-2 max-w-4xl mx-auto">
+        <div className="flex items-center gap-2 max-w-6xl mx-auto">
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
             {copied ? t('analysis.copied') : t('analysis.copy')}
           </button>
+
+          <div className="flex-1" />
+
           <button
-            onClick={handleStop}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg border border-border hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+            onClick={handleOpenInEditor}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-medium rounded-lg border border-border hover:bg-muted text-muted-foreground transition-colors"
           >
-            {i18n.language === 'en' ? 'Stop & Close' : 'Hentikan & Tutup'}
+            <ExternalLink size={12} />
+            {i18n.language === 'en' ? 'Open in editor' : 'Buka di editor'}
           </button>
         </div>
       </div>

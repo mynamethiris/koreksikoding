@@ -177,7 +177,7 @@ export function GuideDetail() {
     <div className="min-h-[calc(100dvh-52px)] pb-2 sm:pb-8">
       <FadeIn>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
-        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <div className="grid gap-3 lg:grid-cols-[260px_1fr]">
             <aside className="lg:sticky lg:top-16 lg:self-start space-y-3 max-h-[calc(100vh-160px)] overflow-y-auto pr-4">
               <button
                 onClick={() => navigate('/guides')}
@@ -209,7 +209,7 @@ export function GuideDetail() {
                           className="block text-[10px] p-1.5 rounded transition-all duration-200 relative group">
                           <span
                             className={cn(
-                              'absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent transition-opacity duration-200',
+                              'absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent transition-opacity duration-200 hidden lg:block',
                               isActive ? 'opacity-60' : 'opacity-0 group-hover:opacity-50',
                             )}
                           />
@@ -236,9 +236,6 @@ export function GuideDetail() {
 
             <main className="space-y-6">
               <div className="space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-[10px] font-medium">
-                  {content.title}
-                </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{content.title}</h1>
                 <p className="text-sm text-muted-foreground max-w-2xl">{content.description}</p>
               </div>
@@ -294,20 +291,21 @@ export function GuideDetail() {
                 ))}
               </div>
 
-{content.quiz && (
-                <Quiz 
-                  quizData={content.quiz} 
-                  onComplete={(score) => {
-                    if (guide && content.quiz) {
-                      const totalQuestions = content.quiz.questions.length;
-                      const passed = score === totalQuestions;
-                      saveQuizScore(guide.id, score, passed);
-                      setQuizCompleted(true);
-                    }
-                  }}
-                  completed={quizCompleted}
-                />
-              )}
+{content.quiz && quizStatus !== 'passed' && (
+            <Quiz 
+              quizData={content.quiz} 
+              onComplete={(score) => {
+                if (guide && content.quiz) {
+                  const totalQuestions = content.quiz.questions.length;
+                  const passed = score === totalQuestions;
+                  saveQuizScore(guide.id, score, passed);
+                  setQuizCompleted(true);
+                  setQuizStatus(passed ? 'passed' : 'failed');
+                }
+              }}
+              completed={quizCompleted}
+            />
+          )}
 
               <nav className="flex items-center justify-between pt-6 border-t border-border">
                 {prevGuide && (

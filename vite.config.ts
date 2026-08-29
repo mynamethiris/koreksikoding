@@ -14,6 +14,13 @@ export default defineConfig({
   },
   server: {
     allowedHosts: true,
+    proxy: {
+      '/api/paste': {
+        target: 'https://paste.rs',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/paste/, ''),
+      },
+    },
   },
   build: {
     rollupOptions: {
