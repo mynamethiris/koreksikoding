@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Code2, Copy, Check, ArrowLeft, FileCode2, Clock, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
-import { getLanguageExtension, detectLanguageFromContent } from '@/lib/api';
+import { getLanguageExtension } from '@/lib/api';
 import { lightTheme, darkTheme } from '@/lib/editor-themes';
 import CodeMirror from '@uiw/react-codemirror';
 import toast from 'react-hot-toast';
@@ -38,6 +38,7 @@ function getLangLabel(lang: string): string {
     markdown: 'Markdown',
     yaml: 'YAML',
     shell: 'Shell',
+    plaintext: 'Text',
   };
   return map[lang] || lang.toUpperCase();
 }
@@ -72,16 +73,19 @@ export function SnippetPage() {
   useEffect(() => {
     const id = searchParams.get('id');
     if (id) {
-      fetch(`/api/paste/${id}`)
-        .then((res) => {
-          if (!res.ok) throw new Error('Not found');
-          return res.text();
-        })
-        .then((code) => {
-          const lang = detectLanguageFromContent(code);
-          setSnippet({ code, lang });
-          setLoading(false);
-        })
+       fetch(`/api/paste/${id}`)
+         .then((res) => {
+           if (!res.ok) throw new Error('Not found');
+           return res.text();
+         })
+         .then((code) => {
+           if (/^\s*(<!doctype|^<html)/i.test(code)) {
+             throw new Error('Not found');
+           }
+           const lang = 'plaintext';
+           setSnippet({ code, lang });
+           setLoading(false);
+         })
         .catch(() => {
           setError(true);
           setLoading(false);

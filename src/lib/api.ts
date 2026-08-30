@@ -228,6 +228,7 @@ export function getLanguageExtension(lang: Language): Extension {
     json: () => json(),
     xml: () => xml(),
     yaml: () => yaml(),
+    plaintext: () => [],
   };
   return (map[lang] || (() => javascript()))() as Extension;
 }

@@ -21,6 +21,7 @@ export type Language =
   | 'json'
   | 'xml'
   | 'yaml'
+  | 'plaintext'
   | (string & {});
 
 export interface EditorFile {

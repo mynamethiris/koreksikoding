@@ -44,7 +44,7 @@ export function SharePage() {
   const { t, i18n } = useTranslation();
   const { theme } = useApp();
   const [code, setCode] = useState('');
-  const [language] = useState('javascript');
+  const [language] = useState('plaintext');
   const [activePaste, setActivePaste] = useState<ActivePaste | null>(() => getInitialActivePaste());
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);

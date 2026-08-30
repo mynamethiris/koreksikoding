@@ -1,3 +1,16 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/api/paste",
+      "dest": "https://paste.rs"
+    },
+    {
+      "source": "/api/paste/:id",
+      "dest": "https://paste.rs/:id"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
