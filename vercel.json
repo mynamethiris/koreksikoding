@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/paste",
-      "dest": "https://paste.rs"
+      "destination": "https://paste.rs"
     },
     {
       "source": "/api/paste/:id",
-      "dest": "https://paste.rs/:id"
+      "destination": "https://paste.rs/:id"
     },
     {
       "source": "/(.*)",
