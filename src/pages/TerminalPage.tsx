@@ -213,7 +213,7 @@ export function TerminalPage() {
                       <div className="flex items-center justify-between px-3 py-2 border-b border-border">
                         <span className="text-xs font-semibold text-foreground">{t('analysis.fixedCode')}</span>
                         <button
-                          onClick={() => handleCopy(result.fixedCode)}
+                          onClick={() => handleCopy(result.fixedCode || '')}
                           className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md hover:bg-muted text-muted-foreground transition-colors"
                         >
                           <Copy size={10} />
@@ -261,7 +261,7 @@ export function TerminalPage() {
                     </div>
                   )}
 
-                  {result.explanation.length > 0 && (
+                  {result.explanation && result.explanation.length > 0 && (
                     <div className="rounded-xl border border-border bg-card p-3 space-y-2">
                       <h3 className="text-xs font-semibold text-accent flex items-center gap-1.5">
                         <Lightbulb size={12} />
@@ -292,7 +292,7 @@ export function TerminalPage() {
 
                   {result.fixedCode && (
                     <div className="flex flex-wrap gap-2">
-                      {getCommunityLinks(result.fixedCode, 'terminal').map((link) => (
+                      {(result.fixedCode ? getCommunityLinks(result.fixedCode, 'terminal') : []).map((link) => (
                         <a
                           key={link.url}
                           href={link.url}

@@ -1,12 +1,13 @@
 # KoreksiKoding
 
-Platform analisis kode berbasis AI. Kode dianalisis secara instan untuk mendeteksi error, warning, saran perbaikan, dan menghasilkan kode yang sudah diperbaiki.
+Platform analisis kode berbasis AI. Kode dianalisis secara instan untuk mendeteksi error, warning, dan saran perbaikan, lalu aplikasi membimbing Anda memperbaiki sendiri tanpa memberikan kode perbaikan siap pakai.
 
 ## Fitur
 
 - **Analisis Cerdas** - Deteksi error, warning, saran perbaikan otomatis pakai AI
 - **CodeMirror 6** - Editor kode dengan syntax highlighting untuk 20+ bahasa
-- **Perbaikan Instan** - Kode yang sudah diperbaiki beserta penjelasan detail
+- **Perbaikan Terbimbing** - Tangga petunjuk (konsep, penyebab, arah) tanpa kode jadi; perbaikannya Anda tulis sendiri
+- **Pemeriksa Perbaikan** - Penguji AI menilai apakah perbaikan Anda benar-benar mengatasi isu, bukan apakah teksnya sama dengan kunci jawaban
 - **Keamanan & Duplikasi** - Deteksi vulnerability (CWE) dan code duplication
 - **Mode Belajar** - Konsep pemrograman terkait dan tips untuk meningkatkan pemahaman
 - **Terminal Error Analyzer** - Analisis pesan error terminal dan dapatkan solusi

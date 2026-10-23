@@ -1,13 +1,14 @@
 import { useState, Component, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, AlertCircle, Info, CheckCircle, ChevronDown, Copy, Check, Wrench, Lightbulb, Download, ExternalLink, Shield, RefreshCw } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, CheckCircle, ChevronDown, Copy, Check, Wrench, Lightbulb, Download, ExternalLink, Shield, RefreshCw, XCircle, Loader2, BookOpen, PenLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
+import type { AnalysisResult, AnalysisError, IssueHint } from '@/types';
 import { useApp } from '@/store/AppContext';
 import { EmptyState } from '@/components/EmptyState';
 import { VulnerabilityTab } from '@/components/VulnerabilityTab';
 import { DuplicationTab } from '@/components/DuplicationTab';
-import { downloadFile, getCommunityLinks, getFileExtensionForLanguage } from '@/lib/api';
+import { downloadFile, getCommunityLinks } from '@/lib/api';
 import { AsyncError } from '@/components/AsyncStatus';
 import { useHasExceeded } from '@/lib/useSlowTimer';
 import toast from 'react-hot-toast';
@@ -119,116 +120,270 @@ function ErrorItem({ item, type, index }: { item: { line: number; message: strin
   );
 }
 
-function CodeBlock({ code, language }: { code: string; language?: string }) {
-  const [copied, setCopied] = useState(false);
+function HintLevel({ hint }: { hint: IssueHint }) {
   const { t } = useTranslation();
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    toast.success(t('toast.codeCopied'));
-    setTimeout(() => setCopied(false), 2000);
+  return (
+    <li className="flex items-start gap-2">
+      <span className="mt-2 w-1 h-1 rounded-full bg-accent/70 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm text-foreground leading-relaxed">{hint.text}</p>
+        {(hint.wrongExample || hint.rightExample) && (
+          <div className="grid grid-cols-1 gap-2 mt-2">
+            {hint.wrongExample && (
+              <pre className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-[10px] font-mono text-foreground overflow-auto whitespace-pre">
+                <span className="block text-[9px] font-sans uppercase tracking-wider text-destructive mb-1">{t('analysis.wrongExample')}</span>
+                {hint.wrongExample}
+              </pre>
+            )}
+            {hint.rightExample && (
+              <pre className="p-2.5 rounded-lg bg-success/10 border border-success/20 text-[10px] font-mono text-foreground overflow-auto whitespace-pre">
+                <span className="block text-[9px] font-sans uppercase tracking-wider text-success mb-1">{t('analysis.correctExample')}</span>
+                {hint.rightExample}
+              </pre>
+            )}
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function HintCard({ issue, onUnlock }: { issue: AnalysisError; onUnlock: () => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [unlocked, setUnlocked] = useState(0);
+  const hints = issue.hints || [];
+  const totalHints = hints.length;
+  const canOpenNext = unlocked < totalHints;
+
+  if (hints.length === 0) return null;
+
+  const unlockNext = () => {
+    setUnlocked((prev) => prev + 1);
+    onUnlock();
   };
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-muted border-b border-border">
-        <span className="text-[10px] font-medium text-muted-foreground uppercase">{language || 'code'}</span>
-        <button onClick={handleCopy} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md hover:bg-background transition-colors text-muted-foreground">
-          {copied ? <Check size={10} className="text-success" /> : <Copy size={10} />}
-          {copied ? t('analysis.copied') : t('analysis.copy')}
-        </button>
-      </div>
-      <pre className="p-4 overflow-auto max-h-[300px] text-xs font-mono text-foreground bg-background">
-        <code>{code}</code>
-      </pre>
-    </div>
+    <motion.div
+      className="rounded-lg border border-border overflow-hidden"
+      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted transition-colors">
+        {issue.line > 0 && (
+          <span className="text-[9px] font-mono text-muted-foreground shrink-0">{t('analysis.line')} {issue.line}</span>
+        )}
+        <span className="text-xs flex-1 text-foreground truncate">{issue.message}</span>
+        {unlocked < totalHints && (
+          <span className="text-[9px] text-muted-foreground shrink-0">{unlocked}/{totalHints}</span>
+        )}
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-muted-foreground">
+          <ChevronDown size={14} />
+        </motion.div>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}>
+            <div className="px-3 pb-3 pt-2 border-t border-border space-y-3">
+              <ul className="space-y-2.5">
+                {hints.slice(0, unlocked).map((hint, i) => <HintLevel key={i} hint={hint} />)}
+              </ul>
+              {canOpenNext ? (
+                <motion.button
+                  onClick={unlockNext}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  className="w-full inline-flex items-center justify-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                >
+                  <Lightbulb size={11} />
+                  {t('analysis.review.openHint')}
+                </motion.button>
+              ) : (
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-accent/5 text-accent border border-accent/20">
+                  <PenLine size={13} className="shrink-0 mt-0.5 text-accent" />
+                  <p className="text-[11px] text-foreground">{t('analysis.review.yourTurn')}</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
-function PerbaikanTab({ result, activeFile }: { result: NonNullable<ReturnType<typeof useApp>['analysisResult']>; activeFile: { name: string; language: string } | undefined }) {
+function ReviewTab({ result }: { result: AnalysisResult }) {
   const { t } = useTranslation();
-  const fixedCode = result.fixedCode?.trim() || '';
-  if (!fixedCode) return <EmptyState icon={<Wrench size={24} />} title={t('analysis.noFixedCode')} />;
+  const { runVerify, isVerifying, verifyResult, verifyError, bumpReviewMetrics } = useApp();
+  const issues = [...result.errors, ...result.warnings, ...result.suggestions];
+
+  const statusChip = (status: string) => {
+    if (status === 'fixed') return <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-success/10 text-success"><Check size={10} /> {t('analysis.review.statusFixed')}</span>;
+    if (status === 'new') return <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-warning/10 text-warning"><AlertCircle size={10} /> {t('analysis.review.statusNew')}</span>;
+    return <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-destructive/10 text-destructive"><XCircle size={10} /> {t('analysis.review.statusNotFixed')}</span>;
+  };
+
+  if (issues.length === 0) {
+    return <EmptyState icon={<CheckCircle size={24} className="text-success" />} title={t('analysis.cleanCode')} description={t('analysis.review.noIssues')} />;
+  }
+
   return (
-    <div className="space-y-4">
-        <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-foreground">{t('analysis.fixedCode')}</h4>
-        <motion.button onClick={() => { 
-          const ext = getFileExtensionForLanguage(activeFile?.language || '');
-          downloadFile(fixedCode, activeFile?.name ? `fixed-${activeFile.name}` : `fixed.${ext}`, 'text/plain'); 
-          toast.success(t('analysis.fileDownloaded')); 
-        }}
-          className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg hover:bg-muted text-muted-foreground transition-colors"
-          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Download size={12} /> Download
-        </motion.button>
+    <div className="space-y-5">
+      <div className="rounded-xl border border-border p-4 space-y-1">
+        <h4 className="text-sm font-semibold text-foreground">{t('analysis.review.title')}</h4>
+        <p className="text-xs text-muted-foreground leading-relaxed">{t('analysis.review.desc')}</p>
       </div>
-      <CodeBlock code={fixedCode} language={activeFile?.language} />
-      {result.changes.length > 0 && (
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{t('analysis.changes')}</h4>
-          <ul className="space-y-1.5">
-            {result.changes.map((change, i) => (
-              <motion.li key={i} className="flex items-start gap-2 text-sm text-foreground"
-                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}>
-                <div className="p-0.5 rounded bg-success/10 mt-0.5 shrink-0"><Check size={12} className="text-success" /></div>
-                {change}
-              </motion.li>
-            ))}
-          </ul>
+
+      <div className="space-y-1.5">
+        {issues.map((issue) => (
+          <HintCard key={issue.id} issue={issue} onUnlock={() => bumpReviewMetrics(1)} />
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-border p-4 space-y-3">
+        <div className="flex items-start gap-2">
+          <PenLine size={15} className="text-accent shrink-0 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-semibold text-foreground">{t('analysis.review.verifyTitle')}</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">{t('analysis.review.verifyDesc')}</p>
+          </div>
         </div>
-      )}
+        <div className="flex items-center gap-3">
+          <motion.button
+            onClick={runVerify}
+            disabled={isVerifying}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-accent/10 text-accent hover:bg-accent/20 disabled:opacity-60 transition-colors"
+          >
+            {isVerifying ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
+            {isVerifying ? t('analysis.review.verifying') : t('analysis.review.verifyBtn')}
+          </motion.button>
+          {result.metrics && result.metrics.attempts > 0 && (
+            <span className="text-[10px] text-muted-foreground">
+              {t('analysis.review.attempts', { count: result.metrics.attempts })} - {t('analysis.review.hintsOpened', { count: result.metrics.hintsOpened })}
+            </span>
+          )}
+        </div>
+
+        {verifyError && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+            <XCircle size={14} className="text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-xs text-destructive">{verifyError}</p>
+              <button onClick={runVerify} className="flex items-center gap-1 text-[10px] mt-1 text-muted-foreground hover:text-foreground transition-colors">
+                <RefreshCw size={9} /> {t('analysis.retry')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {verifyResult && (
+          <motion.div
+            key="verdict"
+            className={`rounded-lg border p-3 space-y-3 ${verifyResult.verdict === 'pass' ? 'bg-success/10 border-success/30' : verifyResult.verdict === 'partial' ? 'bg-warning/10 border-warning/30' : 'bg-destructive/10 border-destructive/30'}`}
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle size={15} className={verifyResult.verdict === 'pass' ? 'text-success' : 'hidden'} />
+              <AlertCircle size={15} className={verifyResult.verdict === 'partial' ? 'text-warning' : 'hidden'} />
+              <XCircle size={15} className={verifyResult.verdict === 'fail' ? 'text-destructive' : 'hidden'} />
+              <h5 className="text-sm font-semibold text-foreground">
+                {verifyResult.verdict === 'pass' ? t('analysis.review.verdictPass') : verifyResult.verdict === 'partial' ? t('analysis.review.verdictPartial') : t('analysis.review.verdictFail')}
+              </h5>
+            </div>
+            {verifyResult.perIssue.map((v, i) => (
+              <div key={i} className="flex items-start gap-2">
+                {statusChip(v.status)}
+                <div className="min-w-0 flex-1">
+                  {v.line > 0 && <span className="text-[10px] font-mono text-muted-foreground">{t('analysis.line')} {v.line}</span>}
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{v.feedback || v.issue}</p>
+                </div>
+              </div>
+            ))}
+            {verifyResult.newIssues.length > 0 && (
+              <div>
+                <span className="text-[10px] uppercase font-semibold tracking-wider text-warning">{t('analysis.review.newIssues')}</span>
+                <ul className="mt-1 space-y-1">
+                  {verifyResult.newIssues.map((n, i) => (
+                    <li key={i} className="text-[11px] text-foreground">{n.line > 0 && <span className="font-mono text-[10px] text-muted-foreground">{t('analysis.line')} {n.line}. </span>}{n.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div>
+              <span className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground">{t('analysis.review.feedback')}</span>
+              <p className="text-xs text-foreground leading-relaxed mt-0.5">{verifyResult.feedback}</p>
+            </div>
+            {verifyResult.recap && verifyResult.recap.length > 0 && (
+              <div>
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase font-semibold tracking-wider text-info"><BookOpen size={10} /> {t('analysis.review.recap')}</span>
+                <ul className="mt-1 space-y-1.5">
+                  {verifyResult.recap.map((r, i) => (
+                    <li key={i} className="text-[11px] text-foreground"><strong className="text-accent">{r.title}</strong> - {r.summary}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 }
 
-function PenjelasanTab({ result }: { result: NonNullable<ReturnType<typeof useApp>['analysisResult']> }) {
+function PenjelasanTab({ result }: { result: AnalysisResult }) {
   const { t } = useTranslation();
-  if (result.explanation.length === 0) return <EmptyState icon={<Lightbulb size={24} />} title={t('analysis.noExplanation')} />;
+  const issues = [...result.errors, ...result.warnings, ...result.suggestions];
+  const hasConcepts = result.concepts.length > 0;
+  if (issues.length === 0 && !hasConcepts) return <EmptyState icon={<Lightbulb size={24} />} title={t('analysis.noExplanation')} />;
   return (
     <div className="space-y-4">
-      {result.explanation.map((exp, i) => (
-        <motion.div key={i} className="border border-border rounded-xl p-4 space-y-3"
+      {issues.map((issue, i) => (
+        <motion.div key={issue.id || i} className="border border-border rounded-xl p-4 space-y-2"
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: i * 0.08 }}>
-          <h4 className="text-sm font-semibold text-accent">{exp.errorType}</h4>
-          <div>
-            <span className="text-[10px] uppercase font-semibold text-destructive tracking-wider">{t('analysis.cause')}</span>
-            <p className="text-sm text-foreground mt-0.5">{exp.cause}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {issue.line > 0 && (
+              <span className="text-[10px] font-mono text-muted-foreground">{t('analysis.line')} {issue.line}</span>
+            )}
+            {issue.category && (
+              <span className={`inline-block text-[10px] px-2 py-0.5 rounded-md font-medium ${STAT_COLORS.info.bg} ${STAT_COLORS.info.text}`}>{issue.category}</span>
+            )}
           </div>
-          <div>
-            <span className="text-[10px] uppercase font-semibold text-success tracking-wider">{t('analysis.fixLabel')}</span>
-            <p className="text-sm text-foreground mt-0.5">{exp.fix}</p>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <span className="text-[10px] uppercase font-semibold text-destructive tracking-wider">{t('analysis.wrongExample')}</span>
-              <pre className="mt-1 p-3 rounded-lg bg-destructive/10 text-xs font-mono text-foreground overflow-auto">{exp.wrongCode}</pre>
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-semibold text-success tracking-wider">{t('analysis.correctExample')}</span>
-              <pre className="mt-1 p-3 rounded-lg bg-success/10 text-xs font-mono text-foreground overflow-auto">{exp.correctCode}</pre>
-            </div>
-          </div>
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-info/10 border border-info/20">
-            <span className="text-[10px] uppercase font-semibold text-info tracking-wider shrink-0 mt-0.5">{t('analysis.tip')}</span>
-            <p className="text-xs text-muted-foreground">{exp.tip}</p>
-          </div>
+          <p className="text-sm font-medium text-foreground">{issue.message}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{issue.explanation}</p>
         </motion.div>
       ))}
+      {hasConcepts && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('analysis.concepts')}</h4>
+          <div className="space-y-2">
+            {result.concepts.map((concept, i) => (
+              <motion.div key={i} className="border border-border rounded-xl p-4 space-y-2"
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}>
+                <h5 className="text-sm font-semibold text-accent">{concept.title}</h5>
+                <p className="text-xs text-foreground">{concept.summary}</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">{concept.content}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-info/10 border border-info/20">
+        <Lightbulb size={13} className="text-info shrink-0 mt-0.5" />
+        <p className="text-xs text-muted-foreground">{t('analysis.review.practiceNote')}</p>
+      </div>
     </div>
   );
 }
 
 
 export function AnalysisPanel() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { analysisResult, isAnalyzing, analysisError, analysisErrorType, activeResultTab, setActiveResultTab, files, activeFileId, activeProvider, runAnalysis } = useApp();
+  const { analysisResult, isAnalyzing, analysisError, analysisErrorType, activeResultTab, setActiveResultTab, activeProvider, runAnalysis, verifyResult } = useApp();
   const showRefresh = useHasExceeded(isAnalyzing);
   const result = analysisResult;
-  const activeFile = files.find((f) => f.id === activeFileId);
 
   const tabs = [
     { id: 'hasil', label: t('analysis.tabs.result'), Icon: CheckCircle },
@@ -240,67 +395,220 @@ export function AnalysisPanel() {
 
   const handleExportMarkdown = () => {
     if (!result) return;
-    const lines: string[] = [];
-    lines.push(`# ${t('analysis.markdownExportTitle')}`);
-    lines.push('');
-    lines.push('## Summary');
-    lines.push('');
-    lines.push('| Metric | Value |');
-    lines.push('|--------|-------|');
-    lines.push(`| ${t('analysis.stat.score')} | ${result.score}/100 |`);
-    lines.push(`| ${t('analysis.stat.error')} | ${result.errors.length} |`);
-    lines.push(`| ${t('analysis.stat.warning')} | ${result.warnings.length} |`);
-    lines.push(`| ${t('analysis.stat.suggestion')} | ${result.suggestions.length} |`);
-    lines.push('');
+    const issues = [...result.errors, ...result.warnings, ...result.suggestions] as AnalysisError[];
+    const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+    const L: string[] = [];
+    const categoryLabel = t('analysis.exportCategory');
 
+    const exportIssue = (item: AnalysisError) => {
+      L.push(`- **${t('analysis.line')} ${item.line}**: ${item.message}`);
+      L.push(`  - ${item.explanation}`);
+      if (item.category) L.push(`  - ${categoryLabel}: \`${item.category}\``);
+      L.push('');
+    };
+    const exportIssueList = (items: AnalysisError[]) => {
+      for (const item of items) exportIssue(item);
+    };
+    const severityLabel = (sev: string) => t(`vulnerability.${sev}`, sev);
+    const severityTally = (list: { severity: string }[]) => {
+      const counts: Record<string, number> = {};
+      for (const item of list) counts[item.severity] = (counts[item.severity] || 0) + 1;
+      return (Object.entries(counts) as [string, number][])
+        .sort(([a], [b]) => (SEVERITY_ORDER[a] ?? 4) - (SEVERITY_ORDER[b] ?? 4))
+        .filter(([, n]) => n > 0)
+        .map(([sev, n]) => `${n} ${severityLabel(sev)}`)
+        .join(', ');
+    };
+
+    L.push(`# ${t('analysis.markdownExportTitle')}`);
+    L.push('');
+
+    // Tab Hasil
+    L.push(`## ${t('analysis.tabs.result')}`);
+    L.push('');
+    L.push(`| ${t('analysis.exportMetric')} | ${t('analysis.exportValue')} |`);
+    L.push('|---|---|');
+    L.push(`| ${t('analysis.stat.score')} | ${result.score}/100 |`);
+    L.push(`| ${t('analysis.stat.error')} | ${result.errors.length} |`);
+    L.push(`| ${t('analysis.stat.warning')} | ${result.warnings.length} |`);
+    L.push(`| ${t('analysis.stat.suggestion')} | ${result.suggestions.length} |`);
+    if (result.tokenUsage) {
+      L.push(`| ${t('analysis.stat.tokenIn')} | ${result.tokenUsage.input.toLocaleString()} |`);
+      L.push(`| ${t('analysis.stat.tokenOut')} | ${result.tokenUsage.output.toLocaleString()} |`);
+      if (result.tokenUsage.model) L.push(`| ${t('analysis.stat.model')} | ${result.tokenUsage.model} |`);
+    }
+    L.push('');
     if (result.errors.length > 0) {
-      lines.push(`## ${t('analysis.errors')} (${result.errors.length})`);
-      lines.push('');
-      for (const e of result.errors) {
-        lines.push(`- **${t('analysis.line')} ${e.line}**: ${e.message}`);
-        lines.push(`  - ${e.explanation}`);
-        if (e.category) lines.push(`  - Category: \`${e.category}\``);
-        lines.push('');
-      }
+      L.push(`### ${t('analysis.errors')} (${result.errors.length})`);
+      L.push('');
+      exportIssueList(result.errors);
     }
     if (result.warnings.length > 0) {
-      lines.push(`## ${t('analysis.warnings')} (${result.warnings.length})`);
-      lines.push('');
-      for (const w of result.warnings) {
-        lines.push(`- **${t('analysis.line')} ${w.line}**: ${w.message}`);
-        lines.push(`  - ${w.explanation}`);
-        if (w.category) lines.push(`  - Category: \`${w.category}\``);
-        lines.push('');
-      }
+      L.push(`### ${t('analysis.warnings')} (${result.warnings.length})`);
+      L.push('');
+      exportIssueList(result.warnings);
     }
     if (result.suggestions.length > 0) {
-      lines.push(`## ${t('analysis.suggestions')} (${result.suggestions.length})`);
-      lines.push('');
-      for (const s of result.suggestions) {
-        lines.push(`- **${t('analysis.line')} ${s.line}**: ${s.message}`);
-        lines.push(`  - ${s.explanation}`);
-        if (s.category) lines.push(`  - Category: \`${s.category}\``);
-        lines.push('');
+      L.push(`### ${t('analysis.suggestions')} (${result.suggestions.length})`);
+      L.push('');
+      exportIssueList(result.suggestions);
+    }
+    if (issues.length === 0) {
+      L.push(`> ${t('analysis.cleanCode')} - ${t('analysis.cleanDesc')}`);
+      L.push('');
+    }
+
+    // Tab Perbaikan
+    L.push('---');
+    L.push('');
+    L.push(`## ${t('analysis.tabs.fix')}`);
+    L.push('');
+    L.push(t('analysis.review.desc'));
+    L.push('');
+    const hinted = issues.filter((issue) => (issue.hints || []).length > 0);
+    for (const issue of hinted) {
+      const lineLabel = issue.line > 0 ? `${t('analysis.line')} ${issue.line} - ` : '';
+      L.push(`### ${lineLabel}${issue.message}`);
+      L.push('');
+      for (const hint of issue.hints || []) {
+        L.push(`- ${hint.text}`);
+        if (hint.wrongExample) {
+          L.push('');
+          L.push(`  *${t('analysis.wrongExample')}:*`);
+          L.push('');
+          L.push('  ```');
+          L.push(hint.wrongExample.split('\n').map((ln) => `  ${ln}`).join('\n'));
+          L.push('  ```');
+        }
+        if (hint.rightExample) {
+          L.push('');
+          L.push(`  *${t('analysis.correctExample')}:*`);
+          L.push('');
+          L.push('  ```');
+          L.push(hint.rightExample.split('\n').map((ln) => `  ${ln}`).join('\n'));
+          L.push('  ```');
+        }
+        L.push('');
+      }
+      L.push(`> ${t('analysis.review.yourTurn')}`);
+      L.push('');
+    }
+    if (result.metrics && result.metrics.attempts > 0) {
+      L.push(`${t('analysis.review.attempts', { count: result.metrics.attempts })} - ${t('analysis.review.hintsOpened', { count: result.metrics.hintsOpened })}`);
+      L.push('');
+    }
+    if (verifyResult) {
+      L.push(`### ${t('analysis.review.verifyTitle')}`);
+      L.push('');
+      L.push(t('analysis.review.verifyDesc'));
+      L.push('');
+      const verdictLabel = verifyResult.verdict === 'pass' ? t('analysis.review.verdictPass')
+        : verifyResult.verdict === 'partial' ? t('analysis.review.verdictPartial')
+        : t('analysis.review.verdictFail');
+      L.push(`**${verdictLabel}**`);
+      L.push('');
+      for (const v of verifyResult.perIssue) {
+        const statusLabel = v.status === 'fixed' ? t('analysis.review.statusFixed')
+          : v.status === 'new' ? t('analysis.review.statusNew')
+          : t('analysis.review.statusNotFixed');
+        const lineLabel = v.line > 0 ? ` (${t('analysis.line')} ${v.line})` : '';
+        L.push(`- **[${statusLabel}]** ${lineLabel} ${v.feedback || v.issue}`);
+      }
+      L.push('');
+      if (verifyResult.newIssues.length > 0) {
+        L.push(`**${t('analysis.review.newIssues')}**`);
+        L.push('');
+        for (const n of verifyResult.newIssues) {
+          L.push(`- ${n.line > 0 ? `${t('analysis.line')} ${n.line}. ` : ''}${n.message}`);
+        }
+        L.push('');
+      }
+      L.push(`**${t('analysis.review.feedback')}**: ${verifyResult.feedback}`);
+      L.push('');
+      if ((verifyResult.recap || []).length > 0) {
+        L.push(`**${t('analysis.review.recap')}**`);
+        L.push('');
+        for (const r of verifyResult.recap || []) {
+          L.push(`- **${r.title}** - ${r.summary}`);
+        }
+        L.push('');
       }
     }
-    if (result.fixedCode) {
-      const ext = getFileExtensionForLanguage(activeFile?.language || '');
-      lines.push(`## ${t('analysis.fixedCode')}`);
-      lines.push('');
-      lines.push(`\`\`\`${ext || ''}`);
-      lines.push(result.fixedCode);
-      lines.push('```');
-      lines.push('');
+
+    // Tab Penjelasan
+    L.push('---');
+    L.push('');
+    L.push(`## ${t('analysis.tabs.explanation')}`);
+    L.push('');
+    if (issues.length === 0 && result.concepts.length === 0) {
+      L.push(`> ${t('analysis.noExplanation')}`);
+      L.push('');
     }
-    if (result.changes.length > 0) {
-      lines.push('## Changes Made');
-      lines.push('');
-      for (const c of result.changes) {
-        lines.push(`- ${c}`);
+    for (const issue of issues) {
+      const lineLabel = issue.line > 0 ? `${t('analysis.line')} ${issue.line}` : '';
+      const catLabel = issue.category ? ` (${issue.category})` : '';
+      L.push(`**${issue.message}**${catLabel}${lineLabel ? ` - ${lineLabel}` : ''}`);
+      L.push('');
+      L.push(issue.explanation);
+      L.push('');
+    }
+    if (result.concepts.length > 0) {
+      L.push(`### ${t('analysis.concepts')}`);
+      L.push('');
+      for (const concept of result.concepts) {
+        L.push(`**${concept.title}**`);
+        L.push('');
+        L.push(concept.summary);
+        L.push('');
+        L.push(concept.content);
+        L.push('');
       }
-      lines.push('');
     }
-    const md = lines.join('\n');
+    L.push(`> ${t('analysis.review.practiceNote')}`);
+    L.push('');
+
+    // Tab Keamanan
+    L.push('---');
+    L.push('');
+    L.push(`## ${t('analysis.tabs.security')}`);
+    L.push('');
+    const vulnerabilities = result.vulnerabilities || [];
+    if (vulnerabilities.length === 0) {
+      L.push(`> ${t('analysis.noVulnerabilities', 'Tidak ada celah keamanan ditemukan')} - ${t('analysis.cleanSecurity', 'Kode Anda aman dari ancaman umum.')}`);
+      L.push('');
+    } else {
+      L.push(`**${vulnerabilities.length} ${t('analysis.exportFindings')}** (${severityTally(vulnerabilities)})`);
+      L.push('');
+      for (const v of [...vulnerabilities].sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 4) - (SEVERITY_ORDER[b.severity] ?? 4))) {
+        const cweLabel = v.cwe ? ` (${v.cwe})` : '';
+        L.push(`- **${severityLabel(v.severity)}** - ${t('analysis.line')} ${v.line}${cweLabel}: ${v.message}`);
+        L.push(`  - ${v.fix}`);
+        if (v.category) L.push(`  - ${categoryLabel}: ${v.category}`);
+      }
+      L.push('');
+    }
+
+    // Tab Duplikasi
+    L.push('---');
+    L.push('');
+    L.push(`## ${t('analysis.tabs.duplication')}`);
+    L.push('');
+    const duplications = result.duplications || [];
+    if (duplications.length === 0) {
+      L.push(`> ${t('analysis.noDuplications')} - ${t('analysis.cleanDuplication')}`);
+      L.push('');
+    } else {
+      L.push(`**${t('duplication.found', { count: duplications.length })}** (${severityTally(duplications)})`);
+      L.push('');
+      for (const d of duplications) {
+        L.push(`- **${severityLabel(d.severity)}** ${t('duplication.lines', { start: d.lineStart, end: d.lineEnd })}${d.category ? ` (${d.category})` : ''}: ${d.message}`);
+        L.push(`  - ${t('duplication.duplicatedWith', { start: d.duplicatedWith.lineStart, end: d.duplicatedWith.lineEnd })}`);
+        if (d.fix) L.push(`  - ${i18n.language === 'en' ? 'Suggestion' : 'Saran'}: ${d.fix}`);
+      }
+      L.push('');
+    }
+
+    const md = L.join('\n');
     downloadFile(md, 'hasil-analisis.md', 'text/markdown');
     toast.success(t('analysis.markdownExport'));
   };
@@ -422,9 +730,9 @@ export function AnalysisPanel() {
                     <span className="font-mono tabular-nums">{result.tokenUsage.output.toLocaleString()}</span>
                   </span>
                   {result.tokenUsage.model && (
-                    <span className="flex items-center gap-1.5 ml-auto">
+                    <div className="flex items-center gap-1.5 ml-auto">
                       <span className="font-mono text-[10px] opacity-60">{result.tokenUsage.model}</span>
-                    </span>
+                    </div>
                   )}
                 </div>
               )}
@@ -457,7 +765,7 @@ export function AnalysisPanel() {
             <motion.div key="perbaikan" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}>
               <TabErrorBoundary>
-              <PerbaikanTab result={result} activeFile={activeFile} />
+              <ReviewTab result={result} />
               </TabErrorBoundary>
             </motion.div>
           )}

@@ -1,11 +1,18 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { EditorFile, AnalysisResult, AnalysisError, Theme, AIProvider, HistoryEntry, Language } from '@/types';
-import { analyzeCode, parseAnalysisResponse, canAnalyze, recordAnalysis, sanitizeCode, sanitizeFixedCode, getRateLimitRemaining, ApiError } from '@/lib/api';
+import type { EditorFile, AnalysisResult, AnalysisError, IssueHint, Theme, AIProvider, HistoryEntry, Language, VerifyResult, ReviewMetrics, Vulnerability, Duplication } from '@/types';
+import { analyzeCode, parseAnalysisResponse, canAnalyze, recordAnalysis, getRateLimitRemaining, detectLanguageFromContent, LANG_DISPLAY, fetchAvailableModels, saveProviders, scanSecurityDuplication, ApiError } from '@/lib/api';
+import { getVerifier } from '@/lib/verify';
+import { ConfirmModal } from '@/components/Modal';
 import { decryptApiKey } from '@/lib/crypto';
 import { db } from '@/lib/db';
 import toast from 'react-hot-toast';
 import { showApiKeyNotification } from '@/components/ApiKeyNotification';
+
+interface AnalysisContext {
+  originalCode: string | null;
+  language: Language | null;
+}
 
 interface AppState {
   files: EditorFile[];
@@ -13,6 +20,10 @@ interface AppState {
   analysisResult: AnalysisResult | null;
   isAnalyzing: boolean;
   analysisError: string | null;
+  isVerifying: boolean;
+  verifyResult: VerifyResult | null;
+  verifyError: string | null;
+  analysisConfirmOpen: boolean;
   theme: Theme;
   providers: AIProvider[];
   activeProvider: AIProvider;
@@ -35,6 +46,11 @@ interface AppContextType extends AppState {
   analysisErrorType: 'modelUnavailable' | 'noApiKey' | null;
   clearAnalysisError: () => void;
   runAnalysis: () => Promise<void>;
+  requestAnalysis: () => void;
+  setAnalysisConfirmOpen: (open: boolean) => void;
+  runVerify: () => Promise<void>;
+  setVerifyResult: (result: VerifyResult | null) => void;
+  bumpReviewMetrics: (hintsOpened: number) => void;
   toggleTheme: () => void;
   setActiveProvider: (provider: AIProvider) => void;
   setProviders: (providers: AIProvider[]) => void;
@@ -48,6 +64,16 @@ const EDITOR_LEGACY_KEY = 'kk_editor_state';
 const EDITOR_LANG_KEY = 'kk_editor_language';
 const ANALYSIS_STATE_KEY = 'kk_analysis_state';
 const CUSTOM_PROMPT_KEY = 'kk_custom_prompt';
+
+const LANGUAGE_SIBLING_GROUPS: string[][] = [
+  ['javascript', 'jsx', 'ts', 'typescript', 'tsx'],
+  ['c', 'cpp'],
+];
+
+function isSiblingLanguage(a: Language, b: Language): boolean {
+  if (a === b) return true;
+  return LANGUAGE_SIBLING_GROUPS.some((group) => group.includes(a) && group.includes(b));
+}
 
 function loadEditorState(): { files: EditorFile[]; activeFileId: string | null } {
   try {
@@ -82,80 +108,201 @@ function defaultEditorFile(): EditorFile {
   return { id: crypto.randomUUID(), name: 'untitled', language: lang, content: '' };
 }
 
-function loadAnalysisState(): AnalysisResult | null {
+function loadAnalysisState(): { result: AnalysisResult | null; context: AnalysisContext | null } {
   try {
     const raw = localStorage.getItem(ANALYSIS_STATE_KEY);
     if (raw) {
-      const result = JSON.parse(raw);
-      if (result && typeof result === 'object') {
-        if (typeof result.fixedCode === 'string') {
-          const cleaned = result.fixedCode.replace(/^```(?:\w*)\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
-          const langPattern = /^(python|javascript|typescript|jsx|tsx|java|c|cpp|cs|go|rust|php|ruby|kotlin|swift|dart|html|css|sql|json|xml|yaml)\s*\n/i;
-          result.fixedCode = cleaned.replace(langPattern, '').trim() || '// Kode perbaikan tidak tersedia';
-        } else if (!result.fixedCode) {
-          result.fixedCode = '// Kode perbaikan tidak tersedia';
-        }
-        if (!Array.isArray(result.errors)) result.errors = [];
-        if (!Array.isArray(result.warnings)) result.warnings = [];
-        if (!Array.isArray(result.suggestions)) result.suggestions = [];
-        if (!Array.isArray(result.explanation)) result.explanation = [];
-        if (!Array.isArray(result.concepts)) result.concepts = [];
-        if (typeof result.score !== 'number') result.score = 0;
-        return result;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.result?.errors)) {
+        return {
+          result: parsed.result as AnalysisResult,
+          context: { originalCode: parsed.originalCode ?? null, language: parsed.language ?? null },
+        };
+      }
+      if (Array.isArray(parsed?.errors)) {
+        return { result: parsed as AnalysisResult, context: null };
       }
     }
   } catch { }
-  return null;
+  return { result: null, context: null };
+}
+
+function normalizeHints(value: unknown): IssueHint[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const hints = value
+    .map((item) => {
+      const raw = (item ?? {}) as Record<string, unknown>;
+      const level = raw.level === 2 ? 2 : raw.level === 3 ? 3 : 1;
+      const text = typeof raw.text === 'string' ? raw.text.trim() : '';
+      const wrongExample = typeof raw.wrongExample === 'string' && raw.wrongExample.trim() ? raw.wrongExample.trim() : undefined;
+      const rightExample = typeof raw.rightExample === 'string' && raw.rightExample.trim() ? raw.rightExample.trim() : undefined;
+      const hint: IssueHint = { level, text };
+      if (wrongExample) hint.wrongExample = wrongExample;
+      if (rightExample) hint.rightExample = rightExample;
+      return text ? hint : null;
+    })
+    .filter((h): h is IssueHint => h !== null);
+  return hints.length > 0 ? hints : undefined;
 }
 
 function normalizeIssues(items: unknown): AnalysisError[] {
   if (!Array.isArray(items)) return [];
-  return items.map((item) => {
-    if (typeof item === 'string') {
-      return { line: 0, message: item, explanation: '', category: '', severity: 'suggestion' as const };
+  return items
+    .map((item) => {
+      if (typeof item === 'string') {
+        return { line: 0, message: item, explanation: '', category: '', severity: 'suggestion' as const };
+      }
+      const raw = (item ?? {}) as Record<string, unknown>;
+      const severity: AnalysisError['severity'] | undefined =
+        raw.severity === 'error' ? 'error'
+        : raw.severity === 'warning' ? 'warning'
+        : raw.severity === 'suggestion' ? 'suggestion'
+        : undefined;
+      return {
+        id: typeof raw.id === 'string' ? raw.id : undefined,
+        line: typeof raw.line === 'number' ? raw.line : 0,
+        message: typeof raw.message === 'string' ? raw.message : String(raw.message ?? raw.title ?? ''),
+        explanation: typeof raw.explanation === 'string' ? raw.explanation : String(raw.explanation ?? raw.fix ?? ''),
+        category: typeof raw.category === 'string' ? raw.category : undefined,
+        hints: normalizeHints(raw.hints),
+        severity,
+      };
+    })
+    .filter((item) => item.message.trim().length > 0);
+}
+
+function withIds(items: AnalysisError[], prefix: string): AnalysisError[] {
+  return items.map((item, i) => (item.id ? item : { ...item, id: `${prefix}${i + 1}` }));
+}
+
+type VulnerabilitySeverity = 'critical' | 'high' | 'medium' | 'low';
+const SEVERITY_VALUES: readonly string[] = ['critical', 'high', 'medium', 'low'];
+
+function normalizeSeverity(raw: unknown): VulnerabilitySeverity {
+  return SEVERITY_VALUES.includes(String(raw ?? '')) ? (String(raw) as VulnerabilitySeverity) : 'medium';
+}
+
+function normalizeLineNumber(raw: unknown): number {
+  return typeof raw === 'number' && raw > 0 && Number.isFinite(raw) ? Math.floor(raw) : 0;
+}
+
+function normalizeText(raw: unknown): string {
+  return typeof raw === 'string' ? raw.trim() : '';
+}
+
+function normalizeVulnerabilities(items: unknown): Vulnerability[] | undefined {
+  if (!Array.isArray(items) || items.length === 0) return undefined;
+  const list = items
+    .map((item) => {
+      const raw = (item ?? {}) as Record<string, unknown>;
+      const message = normalizeText(raw.message);
+      if (!message) return null;
+      const cwe = normalizeText(raw.cwe);
+      return {
+        line: normalizeLineNumber(raw.line),
+        message,
+        severity: normalizeSeverity(raw.severity),
+        category: normalizeText(raw.category),
+        fix: normalizeText(raw.fix),
+        ...(cwe ? { cwe } : {}),
+      } satisfies Vulnerability;
+    })
+    .filter((v): v is Vulnerability => v !== null);
+  return list.length > 0 ? list : undefined;
+}
+
+function normalizeDuplications(items: unknown): Duplication[] | undefined {
+  if (!Array.isArray(items) || items.length === 0) return undefined;
+  const list = items
+    .map((item) => {
+      const raw = (item ?? {}) as Record<string, unknown>;
+      const message = normalizeText(raw.message);
+      const pair = (raw.duplicatedWith ?? {}) as Record<string, unknown>;
+      const hasDuplicate = typeof pair.lineStart === 'number' && typeof pair.lineEnd === 'number';
+      if (!message || !hasDuplicate) return null;
+      return {
+        lineStart: normalizeLineNumber(raw.lineStart),
+        lineEnd: normalizeLineNumber(raw.lineEnd),
+        message,
+        severity: normalizeSeverity(raw.severity),
+        category: normalizeText(raw.category),
+        fix: normalizeText(raw.fix),
+        duplicatedWith: {
+          lineStart: normalizeLineNumber(pair.lineStart),
+          lineEnd: normalizeLineNumber(pair.lineEnd),
+        },
+      } satisfies Duplication;
+    })
+    .filter((d): d is Duplication => d !== null);
+  return list.length > 0 ? list : undefined;
+}
+
+/**
+ * Merges the dedicated security-scan pass findings into a result,
+ * deduped against what the main analysis pass already reported.
+ */
+function mergeSecurityFindings(
+  result: AnalysisResult,
+  parsed: Record<string, unknown> | null,
+): void {
+  if (!parsed) return;
+  if (typeof parsed === 'object' && 'vulnerabilities' in parsed) {
+    const scanned = normalizeVulnerabilities(parsed.vulnerabilities);
+    if (scanned) {
+      const existing = result.vulnerabilities ?? [];
+      const seen = new Set(existing.map((v) => `${v.line}|${v.message}`));
+      result.vulnerabilities = [...existing, ...scanned.filter((v) => !seen.has(`${v.line}|${v.message}`))];
     }
-    return {
-      line: typeof item.line === 'number' ? item.line : 0,
-      message: typeof item.message === 'string' ? item.message : String(item.message ?? item.title ?? ''),
-      explanation: typeof item.explanation === 'string' ? item.explanation : String(item.explanation ?? item.fix ?? ''),
-      category: typeof item.category === 'string' ? item.category : undefined,
-      severity: ['error', 'warning', 'suggestion'].includes(item.severity) ? item.severity : undefined,
-    };
-  });
+  }
+  if (typeof parsed === 'object' && 'duplications' in parsed) {
+    const scanned = normalizeDuplications(parsed.duplications);
+    if (scanned) {
+      const existing = result.duplications ?? [];
+      const seen = new Set(existing.map((d) => `${d.lineStart}-${d.lineEnd}|${d.message}`));
+      result.duplications = [...existing, ...scanned.filter((d) => !seen.has(`${d.lineStart}-${d.lineEnd}|${d.message}`))];
+    }
+  }
 }
 
 function buildAnalysisResult(
   parsed: Record<string, unknown>,
   tokenUsage: { input: number; output: number; model?: string } | undefined,
-  fallbackCode: string,
 ): AnalysisResult {
   return {
-    errors: normalizeIssues(parsed.errors),
-    warnings: normalizeIssues(parsed.warnings),
-    suggestions: normalizeIssues(parsed.suggestions),
+    errors: withIds(normalizeIssues(parsed.errors), 'e'),
+    warnings: withIds(normalizeIssues(parsed.warnings), 'w'),
+    suggestions: withIds(normalizeIssues(parsed.suggestions), 's'),
     score: Math.max(0, Math.min(100, (parsed.score as number) || 0)),
-    fixedCode: sanitizeFixedCode((parsed.fixedCode as string) || '') || fallbackCode,
-    changes: (parsed.changes as string[]) || [],
-    explanation: (parsed.explanation as any[]) || [],
     concepts: (parsed.concepts as any[]) || [],
     exercise: (parsed.exercise as any) || null,
+    metrics: { attempts: 0, hintsOpened: 0 },
     tokenUsage,
     refactoringScore: parsed.refactoringScore as any || undefined,
-    vulnerabilities: (parsed.vulnerabilities as any[]) || undefined,
-    duplications: (parsed.duplications as any[]) || undefined,
+    vulnerabilities: normalizeVulnerabilities(parsed.vulnerabilities),
+    duplications: normalizeDuplications(parsed.duplications),
   };
+}
+
+export function collectIssues(result: AnalysisResult): AnalysisError[] {
+  return [...result.errors, ...result.warnings, ...result.suggestions];
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const saved = loadEditorState();
+  const savedAnalysis = loadAnalysisState();
   const [files, setFilesState] = useState<EditorFile[]>(() => saved.files.length ? saved.files : [defaultEditorFile()]);
   const [activeFileId, setActiveFileId] = useState<string | null>(saved.activeFileId);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(() => loadAnalysisState());
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(() => savedAnalysis.result);
+  const [analysisContextState, setAnalysisContextState] = useState<AnalysisContext | null>(() => savedAnalysis.context);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisErrorType, setAnalysisErrorType] = useState<'modelUnavailable' | 'noApiKey' | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [analysisConfirmOpen, setAnalysisConfirmOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => {
     return (localStorage.getItem('kk_theme') as Theme) || 'dark';
   });
@@ -222,12 +369,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       if (analysisResult) {
-        localStorage.setItem(ANALYSIS_STATE_KEY, JSON.stringify(analysisResult));
+        localStorage.setItem(ANALYSIS_STATE_KEY, JSON.stringify({
+          result: analysisResult,
+          originalCode: analysisContextState?.originalCode ?? null,
+          language: analysisContextState?.language ?? null,
+        }));
       } else {
         localStorage.removeItem(ANALYSIS_STATE_KEY);
       }
     } catch { }
-  }, [analysisResult]);
+  }, [analysisResult, analysisContextState]);
 
   useEffect(() => { localStorage.setItem('kk_active_result_tab', activeResultTab); }, [activeResultTab]);
 
@@ -316,6 +467,86 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('kk_active_provider', provider.id);
   }, []);
 
+  const runVerify = useCallback(async () => {
+    const file = files.find((f) => f.id === activeFileId);
+    if (!file || !file.content.trim()) {
+      toast.error(t('analysis.noCode'));
+      return;
+    }
+    if (!analysisResult || !analysisContextState?.originalCode || !analysisContextState.language) {
+      toast.error(t('analysis.review.legacyAnalysis'));
+      return;
+    }
+    const issues = collectIssues(analysisResult);
+    if (issues.length === 0) {
+      toast.error(t('analysis.review.verifyNoIssues'));
+      return;
+    }
+    if (!activeProvider.apiKey) {
+      const fallback = providers.find((p) => p.id !== activeProvider.id && p.apiKey);
+      if (fallback) {
+        setActiveProvider(fallback);
+      } else {
+        showApiKeyNotification();
+        return;
+      }
+    }
+
+    setIsVerifying(true);
+    setVerifyError(null);
+    try {
+      const verify = getVerifier(analysisContextState.language);
+      const result = await verify({
+        language: analysisContextState.language,
+        originalCode: analysisContextState.originalCode,
+        modifiedCode: file.content,
+        issues,
+        provider: activeProvider,
+      });
+      setAnalysisResult((prev) => {
+        if (!prev) return prev;
+        const metrics: ReviewMetrics = {
+          attempts: (prev.metrics?.attempts ?? 0) + 1,
+          hintsOpened: prev.metrics?.hintsOpened ?? 0,
+          lastVerdict: result.verdict,
+        };
+        return { ...prev, metrics };
+      });
+      setVerifyResult(result);
+      if (result.verdict === 'pass') {
+        toast.success(t('analysis.review.verdictPassToast'));
+      } else {
+        toast.error(t('analysis.review.verdictFailToast'));
+      }
+    } catch (err) {
+      let msg: string;
+      if (err instanceof ApiError) {
+        msg = err.message;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      } else {
+        msg = t('analysis.errorUnknown', { error: String(err) });
+      }
+      setVerifyError(msg);
+      toast.error(t('analysis.review.verifyFailed', { error: msg }));
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [files, activeFileId, analysisResult, analysisContextState, activeProvider, providers, setActiveProvider, t]);
+
+  const bumpReviewMetrics = useCallback((hintsOpened: number) => {
+    if (hintsOpened === 0) return;
+    setAnalysisResult((prev) => {
+      if (!prev) return prev;
+      const metrics: ReviewMetrics = {
+        attempts: prev.metrics?.attempts ?? 0,
+        hintsOpened: (prev.metrics?.hintsOpened ?? 0) + hintsOpened,
+        lastVerdict: prev.metrics?.lastVerdict,
+      };
+      return { ...prev, metrics };
+    });
+  }, []);
+
   const setProviders = useCallback((newProviders: AIProvider[]) => {
     setProvidersState(newProviders);
   }, []);
@@ -330,6 +561,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast.error(t('analysis.noCode'));
       return;
     }
+    if (!file.manualLanguage) {
+      const detected = detectLanguageFromContent(file.content);
+      if (detected !== file.language && !isSiblingLanguage(detected, file.language)) {
+        toast.error(t('analysis.languageMismatch', {
+          detected: LANG_DISPLAY[detected] || detected,
+          current: LANG_DISPLAY[file.language] || file.language,
+        }));
+        return;
+      }
+    }
     if (!activeProvider.apiKey) {
       const fallback = providers.find((p) => p.id !== activeProvider.id && p.apiKey);
       if (fallback) {
@@ -342,13 +583,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
     if (activeProvider.apiKey && (!activeProvider.availableModels || activeProvider.availableModels.length === 0)) {
-      const fallback = providers.find((p) => p.id !== activeProvider.id && p.apiKey && p.availableModels && p.availableModels.length > 0);
-      if (fallback) {
-        setActiveProviderState(fallback);
-        localStorage.setItem('kk_active_provider', fallback.id);
-      } else {
-        toast.error(t('settings.validationRequired'));
-        return;
+      let fixedProvider = activeProvider;
+      try {
+        const models = await fetchAvailableModels(activeProvider);
+        if (models.length > 0) {
+          fixedProvider = { ...activeProvider, availableModels: models };
+          const updated = providers.map((p) => (p.id === fixedProvider.id ? fixedProvider : p));
+          setProviders(updated);
+          await saveProviders(updated);
+          setActiveProviderState(fixedProvider);
+          localStorage.setItem('kk_active_provider', fixedProvider.id);
+        }
+      } catch { }
+      if (!fixedProvider.availableModels || fixedProvider.availableModels.length === 0) {
+        const fallback = providers.find((p) => p.id !== activeProvider.id && p.apiKey && p.availableModels && p.availableModels.length > 0);
+        if (fallback) {
+          setActiveProviderState(fallback);
+          localStorage.setItem('kk_active_provider', fallback.id);
+        } else {
+          toast.error(t('settings.validationRequired'));
+          return;
+        }
       }
     }
     if (!canAnalyze()) {
@@ -358,16 +613,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     setIsAnalyzing(true);
     setAnalysisResult(null);
+    setAnalysisContextState(null);
+    setVerifyResult(null);
+    setVerifyError(null);
     setAnalysisError(null);
 
     try {
-      const sanitized = sanitizeCode(file.content);
-      const { text: rawResponse, tokenUsage } = await analyzeCode(sanitized, file.language, activeProvider);
+      const { text: rawResponse, tokenUsage } = await analyzeCode(file.content, file.language, activeProvider);
       const parsed = parseAnalysisResponse(rawResponse) as Record<string, unknown>;
 
-      const result = buildAnalysisResult(parsed, tokenUsage, file.content);
-
+      const result = buildAnalysisResult(parsed, tokenUsage);
+      try {
+        const { text: scanRaw } = await scanSecurityDuplication(file.content, file.language, activeProvider);
+        // Best-effort secondary pass: a scan failure must not fail the main analysis.
+        mergeSecurityFindings(result, parseAnalysisResponse(scanRaw));
+      } catch { }
       setAnalysisResult(result);
+      setAnalysisContextState({ originalCode: file.content, language: file.language });
       recordAnalysis();
 
       try {
@@ -407,11 +669,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setActiveProviderState(fallback);
           localStorage.setItem('kk_active_provider', fallback.id);
           try {
-            const sanitized = sanitizeCode(file.content);
-            const { text: rawResponse, tokenUsage } = await analyzeCode(sanitized, file.language, fallback);
+            const { text: rawResponse, tokenUsage } = await analyzeCode(file.content, file.language, fallback);
             const parsed = parseAnalysisResponse(rawResponse) as Record<string, unknown>;
-            const result = buildAnalysisResult(parsed, tokenUsage, file.content);
+            const result = buildAnalysisResult(parsed, tokenUsage);
+            try {
+              const { text: scanRaw } = await scanSecurityDuplication(file.content, file.language, fallback);
+              // Best-effort secondary pass: a scan failure must not fail the main analysis.
+              mergeSecurityFindings(result, parseAnalysisResponse(scanRaw));
+            } catch { }
             setAnalysisResult(result);
+            setAnalysisContextState({ originalCode: file.content, language: file.language });
+            setVerifyResult(null);
             recordAnalysis();
             try {
               const entry: HistoryEntry = {
@@ -440,7 +708,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [files, activeFileId, activeProvider, t]);
+  }, [files, activeFileId, activeProvider, providers, setProviders, t]);
+
+  const requestAnalysis = useCallback(() => {
+    if (isAnalyzing) return;
+    if (analysisResult) {
+      setAnalysisConfirmOpen(true);
+      return;
+    }
+    void runAnalysis();
+  }, [analysisResult, isAnalyzing, runAnalysis]);
 
   const clearAnalysisError = useCallback(() => { setAnalysisError(null); setAnalysisErrorType(null); }, []);
 
@@ -464,6 +741,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAnalysisError,
         clearAnalysisError,
         runAnalysis,
+        requestAnalysis,
+        analysisConfirmOpen,
+        setAnalysisConfirmOpen,
+        runVerify,
+        setVerifyResult,
+        bumpReviewMetrics,
+        isVerifying,
+        verifyResult,
+        verifyError,
         theme,
         providers,
         activeProvider,
@@ -488,6 +774,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      <ConfirmModal
+        open={analysisConfirmOpen}
+        onClose={() => setAnalysisConfirmOpen(false)}
+        onConfirm={() => {
+          setAnalysisConfirmOpen(false);
+          void runAnalysis();
+        }}
+        title={t('analysis.confirmNewTitle')}
+        message={t('analysis.confirmNewDesc')}
+        confirmLabel={t('analysis.confirmNewYes')}
+        confirmAccent
+      />
     </AppContext.Provider>
   );
 }

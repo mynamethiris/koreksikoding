@@ -209,7 +209,7 @@ export function RiwayatPage() {
             errorCount: parseInt(errorCount) || 0,
             warningCount: parseInt(warningCount) || 0,
             suggestionCount: parseInt(suggestionCount) || 0,
-            result: { errors: [], warnings: [], suggestions: [], score: parseInt(score) || 0, fixedCode: '', changes: [], explanation: [], concepts: [], exercise: null },
+            result: { errors: [], warnings: [], suggestions: [], score: parseInt(score) || 0, concepts: [], exercise: null },
           });
         }
       } else {

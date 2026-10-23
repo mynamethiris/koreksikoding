@@ -5,6 +5,7 @@ import { AnalysisPanel } from '@/components/AnalysisPanel';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
+import { FadeIn } from '@/components/motion';
 
 const TAB_ORDER = ['editor', 'analysis'] as const;
 
@@ -115,7 +116,7 @@ export function EditorPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-52px)]">
+    <FadeIn className="flex flex-col h-[calc(100dvh-52px)]">
       <div className="flex-1 min-h-0 flex">
         <div className="w-1/2 flex flex-col border-r border-border min-w-0">
           <div className="flex-1 min-h-0">
@@ -129,6 +130,6 @@ export function EditorPage() {
           </div>
         </div>
       </div>
-    </div>
+    </FadeIn>
   );
 }

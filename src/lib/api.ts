@@ -13,18 +13,20 @@ import { yaml } from '@codemirror/lang-yaml';
 import { autocompletion } from '@codemirror/autocomplete';
 import i18n from '@/lib/i18n';
 import { encryptApiKey, decryptApiKey, isEncryptionVersionUpToDate, setEncryptionVersion } from '@/lib/crypto';
-import { getAnalysisPrompt } from '@/lib/prompts';
+import { getAnalysisPrompt, getVerifyPrompt, getSecurityScanPrompt } from '@/lib/prompts';
 
 export class ApiError extends Error {
   public status: number;
   public provider: string;
   public isModelUnavailable: boolean;
-  constructor(message: string, status: number, provider: string, isModelUnavailable = false) {
+  public isRetryable: boolean;
+  constructor(message: string, status: number, provider: string, isModelUnavailable = false, isRetryable = false) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.provider = provider;
     this.isModelUnavailable = isModelUnavailable;
+    this.isRetryable = isRetryable;
   }
 }
 
@@ -41,9 +43,10 @@ async function parseErrorResponse(res: Response, provider: AIProvider): Promise<
     detail = text.slice(0, 300);
   }
   const isModelBusy = res.status === 503 || MODEL_BUSY_PATTERN.test(detail);
+  const isRetryable = isModelBusy || res.status === 429 || res.status >= 500;
   let message: string;
   if (isModelBusy) {
-    message = i18n.t('analysis.error503');
+    message = i18n.t('analysis.errorBusy');
   } else if (res.status === 401) {
     message = i18n.t('analysis.error401');
   } else if (res.status === 403) {
@@ -55,7 +58,33 @@ async function parseErrorResponse(res: Response, provider: AIProvider): Promise<
   } else {
     message = i18n.t('analysis.apiError', { status: res.status, error: detail });
   }
-  return new ApiError(message, res.status, provider.name, isModelBusy);
+  return new ApiError(message, res.status, provider.name, isModelBusy, isRetryable);
+}
+
+const RETRY_DELAYS_MS = [1500, 3500];
+
+function delay(ms: number): Promise<void> {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Retries provider-side failures (busy model, 429, 5xx) automatically
+ * with a short backoff before surfacing the error to the user.
+ */
+export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let attempt = 0;
+  for (;;) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (err instanceof ApiError && err.isRetryable && attempt < RETRY_DELAYS_MS.length) {
+        await delay(RETRY_DELAYS_MS[attempt]);
+        attempt++;
+        continue;
+      }
+      throw err;
+    }
+  }
 }
 
 const DEFAULT_PROVIDERS: AIProvider[] = [
@@ -72,10 +101,10 @@ const DEFAULT_PROVIDERS: AIProvider[] = [
     id: 'groq',
     name: 'Groq',
     endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-    model: 'groq/compound-mini',
+    model: 'allam-2-7b',
     apiKey: '',
     isDefault: true,
-    recommended: ['groq/compound-mini', 'qwen/qwen3.6-27b', 'openai/gpt-oss-120b'],
+    recommended: ['allam-2-7b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b'],
   },
 ];
 
@@ -191,7 +220,7 @@ export function detectLanguageFromContent(code: string): Language {
   if (/^SELECT\s|^INSERT\s|^CREATE\s|^ALTER\s|^DROP\s|^UPDATE\s|^DELETE\s/m.test(s)) return 'sql';
   if (/^#include\s|^int\s+main|^void\s|^printf\(|^cout\s|^cin\s/m.test(s)) return 'c';
   if (/^package\s|^func\s|^import\s*\(/m.test(s)) return 'go';
-  if (/^def\s|^import\s|^self\.|^elif\s|^class\s+\w+|^print\(|^if\s+__name__/m.test(s)) return 'python';
+  if (/^def\s|^self\.|^elif\s|^class\s+\w+|^print\(|^if\s+__name__/m.test(s)) return 'python';
   if (/^public\s+class|^private\s|^System\.out/m.test(s)) return 'java';
   if (/^<\?php|^\$\w+/m.test(s)) return 'php';
   if (/:\s*string|:\s*number|interface\s|^type\s+\w+|as\s+\w+/m.test(s)) return 'typescript';
@@ -247,9 +276,9 @@ export async function testConnection(provider: AIProvider): Promise<{ success: b
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        return { success: false, message: `HTTP ${res.status}: ${data.error?.message || res.statusText}` };
+        return { success: false, message: `Model ${provider.model} tidak aktif (${res.status}): ${data.error?.message || res.statusText}` };
       }
-      return { success: true, message: 'Koneksi berhasil! API Key valid.' };
+      return { success: true, message: `Koneksi berhasil! API Key valid, model ${provider.model} aktif.` };
     }
 
     const res = await fetch(provider.endpoint, {
@@ -266,9 +295,9 @@ export async function testConnection(provider: AIProvider): Promise<{ success: b
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      return { success: false, message: `HTTP ${res.status}: ${data.error?.message || res.statusText}` };
+      return { success: false, message: `Model ${provider.model} tidak aktif (${res.status}): ${data.error?.message || res.statusText}` };
     }
-    return { success: true, message: 'Koneksi berhasil! API Key valid.' };
+    return { success: true, message: `Koneksi berhasil! API Key valid, model ${provider.model} aktif.` };
   } catch (err) {
     return { success: false, message: `Gagal menghubungi server: ${err instanceof Error ? err.message : 'Kesalahan tidak diketahui'}` };
   }
@@ -318,14 +347,14 @@ export function getCommunityLinks(errorMessage: string, language: string): { tit
   ];
 }
 
-export { getAnalysisPrompt, getConvertPrompt, getTerminalErrorPrompt } from '@/lib/prompts';
+export { getAnalysisPrompt, getVerifyPrompt, getSecurityScanPrompt, getConvertPrompt, getTerminalErrorPrompt } from '@/lib/prompts';
 
 function stripThinkingBlocks(text: string): string {
   if (!text) return '';
   return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 }
 
-export async function analyzeCode(
+async function sendAnalysisRequest(
   code: string,
   language: Language,
   provider: AIProvider,
@@ -340,7 +369,7 @@ export async function analyzeCode(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: `${prompt}\n\nKode:\n\`\`\`${language}\n${code}\n\`\`\`` }] }],
-        generationConfig: { responseMimeType: 'application/json' },
+        generationConfig: { responseMimeType: 'application/json', temperature: 0 },
       }),
     });
     if (!res.ok) throw await parseErrorResponse(res, provider);
@@ -366,7 +395,7 @@ export async function analyzeCode(
         { role: 'system', content: prompt },
         { role: 'user', content: `${i18n.language === 'en' ? 'Analyze this code:' : 'Analisis kode ini:'}\n\`\`\`${language}\n${code}\n\`\`\`` },
       ],
-      temperature: 0.1,
+      temperature: 0,
       max_tokens: 4096,
     }),
   });
@@ -385,11 +414,152 @@ export async function analyzeCode(
   return { text, tokenUsage };
 }
 
+export function analyzeCode(
+  code: string,
+  language: Language,
+  provider: AIProvider,
+  customPrompt?: string,
+): Promise<{ text: string; tokenUsage?: { input: number; output: number; model?: string } }> {
+  return withRetry(() => sendAnalysisRequest(code, language, provider, customPrompt));
+}
+
+/**
+ * Dedicated second-pass scan: fills only `vulnerabilities` and `duplications`.
+ * Kept separate from the main analysis so both tabs stay reliable even when
+ * the main pass omits them.
+ */
+async function sendSecurityScanRequest(
+  code: string,
+  language: Language,
+  provider: AIProvider,
+): Promise<{ text: string }> {
+  const prompt = getSecurityScanPrompt(language);
+
+  if (provider.id === 'gemini') {
+    const url = `${provider.endpoint}?key=${provider.apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${prompt}\n\nKode:\n\`\`\`${language}\n${code}\n\`\`\`` }] }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0 },
+      }),
+    });
+    if (!res.ok) throw await parseErrorResponse(res, provider);
+    const data = await res.json();
+    return { text: data.candidates?.[0]?.content?.parts?.[0]?.text || '' };
+  }
+
+  const res = await fetch(provider.endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${provider.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: provider.model,
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: `${i18n.language === 'en' ? 'Scan this code:' : 'Pindai kode ini:'}\n\`\`\`${language}\n${code}\n\`\`\`` },
+      ],
+      temperature: 0,
+      max_tokens: 2048,
+    }),
+  });
+  if (!res.ok) throw await parseErrorResponse(res, provider);
+  const data = await res.json();
+  const msg = data.choices?.[0]?.message;
+  const content = msg?.content || '';
+  const stripped = stripThinkingBlocks(content);
+  return { text: stripped || content || msg?.reasoning || '' };
+}
+
+export function scanSecurityDuplication(
+  code: string,
+  language: Language,
+  provider: AIProvider,
+): Promise<{ text: string }> {
+  return withRetry(() => sendSecurityScanRequest(code, language, provider));
+}
+
+async function sendVerifyRequest(
+  input: { originalCode: string; modifiedCode: string; issues: unknown },
+  language: Language,
+  provider: AIProvider,
+  customPrompt?: string,
+): Promise<{ text: string; tokenUsage?: { input: number; output: number; model?: string } }> {
+  const prompt = getVerifyPrompt(customPrompt);
+  const en = i18n.language === 'en';
+  const userMessage = en
+    ? `Original code (before the fix):\n\`\`\`${language}\n${input.originalCode}\n\`\`\`\n\nKnown issues:\n${JSON.stringify(input.issues, null, 2)}\n\nStudent's code to grade:\n\`\`\`${language}\n${input.modifiedCode}\n\`\`\``
+    : `Kode asli (sebelum perbaikan):\n\`\`\`${language}\n${input.originalCode}\n\`\`\`\n\nDaftar isu yang diketahui:\n${JSON.stringify(input.issues, null, 2)}\n\nKode siswa yang harus dinilai:\n\`\`\`${language}\n${input.modifiedCode}\n\`\`\``;
+
+  if (provider.id === 'gemini') {
+    const url = `${provider.endpoint}?key=${provider.apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${prompt}\n\n${userMessage}` }] }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0 },
+      }),
+    });
+    if (!res.ok) throw await parseErrorResponse(res, provider);
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const tokenUsage = data.usageMetadata ? {
+      input: data.usageMetadata.promptTokenCount || 0,
+      output: data.usageMetadata.candidatesTokenCount || 0,
+      model: provider.model,
+    } : undefined;
+    return { text, tokenUsage };
+  }
+
+  const res = await fetch(provider.endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${provider.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: provider.model,
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: userMessage },
+      ],
+      temperature: 0,
+      max_tokens: 4096,
+    }),
+  });
+  if (!res.ok) throw await parseErrorResponse(res, provider);
+  const data = await res.json();
+  const msg = data.choices?.[0]?.message;
+  const content = msg?.content || '';
+  const reasoning = msg?.reasoning || '';
+  const stripped = stripThinkingBlocks(content);
+  const text = stripped || content || reasoning || '';
+  const tokenUsage = data.usage ? {
+    input: data.usage.prompt_tokens || 0,
+    output: data.usage.completion_tokens || 0,
+    model: provider.model,
+  } : undefined;
+  return { text, tokenUsage };
+}
+
 function stripCodeFences(code: string): string {
   if (!code) return code;
   let s = code.trim();
   s = s.replace(/^```(?:\w*)\s*\n?/, '').replace(/\n?```\s*$/, '');
   return s.trim();
+}
+
+export function verifyFix(
+  input: { originalCode: string; modifiedCode: string; issues: unknown },
+  language: Language,
+  provider: AIProvider,
+  customPrompt?: string,
+): Promise<{ text: string; tokenUsage?: { input: number; output: number; model?: string } }> {
+  return withRetry(() => sendVerifyRequest(input, language, provider, customPrompt));
 }
 
 export function sanitizeFixedCode(raw: string): string {
@@ -402,11 +572,7 @@ export function sanitizeFixedCode(raw: string): string {
 }
 
 export function parseAnalysisResponse(raw: string): Record<string, unknown> {
-  const parsed = extractJSON(raw);
-  if (parsed && parsed.fixedCode && typeof parsed.fixedCode === 'string') {
-    parsed.fixedCode = sanitizeFixedCode(parsed.fixedCode);
-  }
-  return parsed;
+  return extractJSON(raw);
 }
 
 export function extractJSON(raw: string): Record<string, unknown> {
@@ -474,15 +640,6 @@ export function getRateLimitRemaining(): number {
   const now = Date.now();
   if (now - windowStart > HOUR_MS) return ANALYSIS_LIMIT;
   return Math.max(0, ANALYSIS_LIMIT - count);
-}
-
-export function sanitizeCode(code: string): string {
-  return code
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<\s*(?:iframe|object|embed|svg|link|style|base)\b[^>]*>/gi, '')
-    .replace(/on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-    .replace(/javascript\s*:/gi, '')
-    .slice(0, 50000);
 }
 
 export function formatTimestamp(ts: number): string {

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Settings, Eye, EyeOff, Check, Trash2, Users, GraduationCap, Crown, User, Zap, ChevronDown, ExternalLink, Loader2, X } from 'lucide-react';
+import { Settings, Eye, EyeOff, Check, Trash2, Users, GraduationCap, Crown, User, Zap, ChevronDown, ExternalLink, Loader2, X, List } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/store/AppContext';
@@ -66,6 +66,8 @@ export function SettingsPage() {
   const [clearDataConfirm, setClearDataConfirm] = useState(false);
   const [flashId, setFlashId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [loadingModelsId, setLoadingModelsId] = useState<string | null>(null);
+  const [modelStatus, setModelStatus] = useState<Record<string, boolean>>({});
   const [validatedIds, setValidatedIds] = useState<Set<string>>(() => {
     const valid = new Set<string>();
     for (const p of providers) {
@@ -125,6 +127,7 @@ export function SettingsPage() {
       if (!current) { setTestingId(null); return; }
       const tempProvider = { ...current, apiKey: key };
       const result = await testConnection(tempProvider);
+      setModelStatus((prev) => ({ ...prev, [providerId]: result.success }));
       if (result.success) {
         const models = await fetchAvailableModels(tempProvider);
         setValidatedIds((prev) => new Set(prev).add(providerId));
@@ -193,7 +196,7 @@ export function SettingsPage() {
     }
   };
 
-  const handleTestConnection = async (provider: AIProvider) => {
+  const handleTestModel = async (provider: AIProvider) => {
     if (!provider.apiKey) {
       toast.error(t('settings.enterKeyFirst'));
       return;
@@ -201,22 +204,37 @@ export function SettingsPage() {
     setTestingId(provider.id);
     try {
       const result = await testConnection(provider);
+      setModelStatus((prev) => ({ ...prev, [provider.id]: result.success }));
       if (result.success) {
         toast.success(result.message);
-        const models = await fetchAvailableModels(provider);
-        if (models.length > 0) {
-          const updated = providers.map((p) =>
-            p.id === provider.id ? { ...p, availableModels: models } : p,
-          );
-          setProviders(updated);
-          saveProviders(updated);
-          toast.success(t('settings.modelsFetched', { count: models.length }));
-        }
       } else {
         toast.error(result.message);
       }
     } finally {
       setTestingId(null);
+    }
+  };
+
+  const handleLoadModels = async (provider: AIProvider) => {
+    if (!provider.apiKey) {
+      toast.error(t('settings.enterKeyFirst'));
+      return;
+    }
+    setLoadingModelsId(provider.id);
+    try {
+      const models = await fetchAvailableModels(provider);
+      if (models.length > 0) {
+        const updated = providers.map((p) =>
+          p.id === provider.id ? { ...p, availableModels: models } : p,
+        );
+        setProviders(updated);
+        saveProviders(updated);
+        toast.success(t('settings.modelsFetched', { count: models.length }));
+      } else {
+        toast.error(t('settings.modelsFailed'));
+      }
+    } finally {
+      setLoadingModelsId(null);
     }
   };
 
@@ -284,9 +302,22 @@ export function SettingsPage() {
                   transition={{ duration: 0.6, ease: 'easeOut' }}
                 />
                 <div className="relative flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-foreground">{p.name}</span>
                     {p.isDefault && <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-accent/10 text-accent font-medium">{t('settings.default')}</span>}
+                    {testingId === p.id ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground font-medium">{t('settings.validatingBadge')}</span>
+                    ) : validatedIds.has(p.id) ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-success/10 text-success font-medium">{t('settings.validatedBadge')}</span>
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-warning/10 text-warning font-medium">{t('settings.notValidatedBadge')}</span>
+                    )}
+                    {modelStatus[p.id] === true && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-success/10 text-success font-medium border border-success/20">{t('settings.modelActiveBadge')}</span>
+                    )}
+                    {modelStatus[p.id] === false && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-destructive/10 text-destructive font-medium border border-destructive/20">{t('settings.modelInactiveBadge')}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <AnimatePresence mode="wait">
@@ -431,16 +462,33 @@ export function SettingsPage() {
                     ) : null}
                   </div>
                   <motion.button
-                    onClick={(e) => { e.stopPropagation(); handleTestConnection(p); }}
+                    onClick={(e) => { e.stopPropagation(); handleTestModel(p); }}
                     disabled={testingId === p.id || !p.apiKey}
                     className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground disabled:opacity-40"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
-                    title={t('settings.testConnection')}
+                    title={t('settings.testModelTitle')}
                   >
                     <div className="relative">
                       <Zap size={14} />
                       {testingId === p.id && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                  </motion.button>
+                  <motion.button
+                    onClick={(e) => { e.stopPropagation(); handleLoadModels(p); }}
+                    disabled={loadingModelsId === p.id || !p.apiKey}
+                    className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground disabled:opacity-40"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    title={t('settings.loadModelsTitle')}
+                  >
+                    <div className="relative">
+                      <List size={14} />
+                      {loadingModelsId === p.id && (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                         </div>

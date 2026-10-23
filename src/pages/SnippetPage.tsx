@@ -8,6 +8,7 @@ import { lightTheme, darkTheme } from '@/lib/editor-themes';
 import CodeMirror from '@uiw/react-codemirror';
 import toast from 'react-hot-toast';
 import type { Language } from '@/types';
+import { FadeIn } from '@/components/motion';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LEGACY_STORAGE_PREFIX = 'kk_share_';
@@ -209,7 +210,7 @@ export function SnippetPage() {
   if (!snippet) return null;
 
   return (
-    <div className="flex flex-col min-h-[calc(100dvh-52px)]">
+    <FadeIn className="flex flex-col min-h-[calc(100dvh-52px)]">
       {/* Header */}
       <div className="px-3 sm:px-6 pt-3 sm:pt-4 pb-2 sm:pb-3 border-b border-border bg-card shrink-0">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
@@ -299,6 +300,6 @@ export function SnippetPage() {
           </button>
         </div>
       </div>
-    </div>
+    </FadeIn>
   );
 }

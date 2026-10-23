@@ -34,12 +34,21 @@ export interface EditorFile {
 }
 
 export interface AnalysisError {
+  id?: string;
   line: number;
   message: string;
   explanation: string;
-  severity: 'error' | 'warning' | 'suggestion';
+  severity?: 'error' | 'warning' | 'suggestion';
   category?: string;
+  hints?: IssueHint[];
   communityLinks?: { title: string; url: string }[];
+}
+
+export interface IssueHint {
+  level: 1 | 2 | 3;
+  text: string;
+  wrongExample?: string;
+  rightExample?: string;
 }
 
 export interface TokenUsage {
@@ -85,15 +94,17 @@ export interface AnalysisResult {
   warnings: AnalysisError[];
   suggestions: AnalysisError[];
   score: number;
-  fixedCode: string;
-  changes: string[];
-  explanation: ExplanationItem[];
   concepts: LearningConcept[];
   exercise: Exercise | null;
+  metrics?: ReviewMetrics;
   tokenUsage?: TokenUsage;
   refactoringScore?: RefactoringScore;
   vulnerabilities?: Vulnerability[];
   duplications?: Duplication[];
+  // Legacy shape used by the terminal analyzer and imported old records only.
+  fixedCode?: string;
+  changes?: string[];
+  explanation?: ExplanationItem[];
 }
 
 export interface ExplanationItem {
@@ -103,6 +114,31 @@ export interface ExplanationItem {
   wrongCode: string;
   correctCode: string;
   tip: string;
+}
+
+export interface ReviewMetrics {
+  attempts: number;
+  hintsOpened: number;
+  lastVerdict?: VerifyResult['verdict'];
+}
+
+export type IssueVerdictStatus = 'fixed' | 'not_fixed' | 'new';
+
+export interface IssueVerdict {
+  issueId: string;
+  line: number;
+  issue: string;
+  status: IssueVerdictStatus;
+  feedback: string;
+}
+
+export interface VerifyResult {
+  verdict: 'pass' | 'partial' | 'fail';
+  perIssue: IssueVerdict[];
+  newIssues: { line: number; message: string; category?: string }[];
+  feedback: string;
+  recap?: { title: string; summary: string }[];
+  tokenUsage?: TokenUsage;
 }
 
 export interface LearningConcept {

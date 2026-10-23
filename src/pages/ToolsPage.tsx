@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Terminal, Share2, Wand2, ArrowRightLeft, Copy, Check, Clock, Keyboard, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { FadeIn, FadeInStagger, FadeInStaggerItem } from '@/components/motion';
 
 function TerminalPreview() {
   return (
@@ -199,36 +200,39 @@ export function ToolsPage() {
   return (
     <div className="min-h-full pb-24">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12">
-        <div className="text-center mb-8 sm:mb-12">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{t('tools.title')}</h1>
-          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">{t('tools.subtitle')}</p>
-        </div>
+        <FadeIn>
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{t('tools.title')}</h1>
+            <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">{t('tools.subtitle')}</p>
+          </div>
+        </FadeIn>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <FadeInStagger className="grid gap-4 sm:grid-cols-2">
           {TOOLS.map((tool) => {
             const Icon = tool.icon;
             return (
-              <div
-                key={tool.id}
-                onClick={() => navigate(tool.path)}
-                className="group rounded-xl border border-border bg-card overflow-hidden hover:border-accent/30 hover:bg-accent/5 transition-[border-color,background-color] duration-300 cursor-pointer"
-              >
-                <div className="p-5 space-y-3">
-                  <div className={`inline-flex p-2.5 rounded-lg ${tool.bg}`}>
-                    <Icon size={18} className={tool.color} />
+              <FadeInStaggerItem key={tool.id}>
+                <div
+                  onClick={() => navigate(tool.path)}
+                  className="group rounded-xl border border-border bg-card overflow-hidden hover:border-accent/30 hover:bg-accent/5 transition-[border-color,background-color] duration-300 cursor-pointer"
+                >
+                  <div className="p-5 space-y-3">
+                    <div className={`inline-flex p-2.5 rounded-lg ${tool.bg}`}>
+                      <Icon size={18} className={tool.color} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">{t(tool.titleKey)}</h3>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t(tool.descKey)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">{t(tool.titleKey)}</h3>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t(tool.descKey)}</p>
+                  <div className="px-5 pb-4">
+                    {tool.preview}
                   </div>
                 </div>
-                <div className="px-5 pb-4">
-                  {tool.preview}
-                </div>
-              </div>
+              </FadeInStaggerItem>
             );
           })}
-        </div>
+        </FadeInStagger>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ export function Header() {
   const { t, i18n } = useTranslation();
   const {
     isAnalyzing,
-    runAnalysis,
+    requestAnalysis,
     theme, toggleTheme,
   } = useApp();
   const [langFlash, setLangFlash] = useState(false);
@@ -33,8 +33,8 @@ export function Header() {
   }, [i18n.language]);
 
   const handleAnalyze = useCallback(() => {
-    runAnalysis();
-  }, [runAnalysis]);
+    requestAnalysis();
+  }, [requestAnalysis]);
 
   const navItems = [
     { path: '/editor', label: t('header.editor'), icon: Zap },
